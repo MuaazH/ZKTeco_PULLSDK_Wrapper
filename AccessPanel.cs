@@ -605,6 +605,27 @@ namespace i04PullSDK
             return false;
         }
 
+        public bool DeleteAllTransactions()
+        {
+            if (!IsConnected())
+            {
+                return false;
+            }
+            bool failed = false;
+            DeleteDeviceData(handle, TRANSACTIONS_TABLE, "doorid=", "");
+            for (int i = 0; i < 10; i++)
+            {
+                if (0 > DeleteDeviceData(handle, TRANSACTIONS_TABLE, "doorid="+i, ""))
+                {
+                    failed = true;
+                }
+            }
+            if (failed)
+            {
+                failCount++;
+            }
+            return true;
+        }
         public bool DeleteUserByCard(string card) {
             if (!IsConnected()) {
                 return false;
@@ -637,10 +658,10 @@ namespace i04PullSDK
                 return false;
             }
             failCount++;
-            */
             return false;
+            */
         }
-        
+
         public bool DeleteUserFingerprints(string pin) {
             if (!IsConnected()) {
                 return false;
