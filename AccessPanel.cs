@@ -486,7 +486,11 @@ namespace i04PullSDK
                     if (reader.ReadHead())
                     {
                         int count = reader.LineCount;
-                        List<User> users = new List<User>(count);
+                        List<User> users = new List<User>();
+                        if (count < 1)
+                        {
+                            return users;
+                        }
                         for (int i = 0; i < count; i++)
                         {
                             users.Add(reader.Next());
@@ -706,27 +710,14 @@ namespace i04PullSDK
             {
                 return false;
             }
-            var user = ReadUsers();
-            int fail = 0;
-            for (int i = 0; i < user.Count; i++)
-            {
-                if (DeleteUser(user[i].Pin))
-                {
-                    fail++;
-                    if (fail > 20)
-                    {
-                        return false;
-                    }
-                }
-            }
-            /*if (0 <= DeleteDeviceData(handle, FP_TABLE, "", "")
+            if (0 <= DeleteDeviceData(handle, FP_TABLE, "", "")
                     && 0 <= DeleteDeviceData(handle, USER_TABLE, "", "")
                     && 0 <= DeleteDeviceData(handle, AUTH_TABLE, "", "")
                     && 0 <= DeleteDeviceData(handle, TIMEZONE_TABLE, "", "")
                     && 0 <= DeleteDeviceData(handle, TRANSACTIONS_TABLE, "", ""))
             {
                 return true;
-            }*/
+            }
             failCount++;
             return false;
         }
