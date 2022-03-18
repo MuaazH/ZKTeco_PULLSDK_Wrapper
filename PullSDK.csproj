@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>PullSDK</RootNamespace>
     <AssemblyName>plrcomm</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <NoWin32Manifest>False</NoWin32Manifest>
     <SignAssembly>False</SignAssembly>

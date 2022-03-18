@@ -746,7 +746,7 @@ namespace i04PullSDK
             );
         }
         
-        bool WriteTimezone(int[] tz) {
+        public bool WriteTimezone(int[] tz) {
             byte[] defaultTimeZoneData = Encoding.ASCII.GetBytes(TimezoneString(tz));
             if (SetDeviceData(handle, TIMEZONE_TABLE, defaultTimeZoneData, "") != 0) {
                 return false;
