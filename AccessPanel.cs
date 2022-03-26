@@ -603,7 +603,7 @@ namespace i04PullSDK
                 //return false;
             //}
             DeleteUserTimezones(pin);
-            DeleteUserTransactions(pin);
+            //DeleteUserTransactions(pin);
             if (0 <= DeleteDeviceData(handle, USER_TABLE, "Pin=" + pin, "")) {
                 return true;
             }
