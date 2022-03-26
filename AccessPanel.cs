@@ -155,12 +155,22 @@ namespace i04PullSDK
             Fingerprints = new Fingerprint[0];
         }
 
+        public User(string pin, string name, string card, string password, string startTime, string endTime, int[] doors) : this(pin, name, card, password, startTime, endTime)
+        {
+            Doors = doors;
+        }
+
+        private int[] _doors = new int[0];
         public string Pin { get; set; }
         public string Card { get; set; }
         public string Name { get; set; }
         public string Password { get; set; }
         public string StartTime { get; set; }
         public string EndTime { get; set; }
+        public int[] Doors {
+            get { return _doors; }
+            set { _doors = value == null ? new int[0] : value; }
+        }
         public Fingerprint[] Fingerprints { get; set; }
 
         #region IComparable implementation
@@ -246,14 +256,6 @@ namespace i04PullSDK
         string NotNull(string s)
         {
             return s ?? "";
-        }
-        
-        public string AuthTableData(int timezoneID, int doorCount) {
-            int[] allDoors = {0, 1, 3, 7, 15, 31, 63, 127, 255, 1023};
-            return
-                "Pin=" + NotNull(Pin) + "\t" +
-                "AuthorizeTimezoneId=" + timezoneID + "\t" +
-                "AuthorizeDoorId=" + allDoors[doorCount];
         }
         
         public override string ToString()
@@ -753,7 +755,29 @@ namespace i04PullSDK
             }
             return true;
         }
-        
+
+        private string AuthTableData(string pin, int timezoneID, int[] doors)
+        {
+
+            //int[] allDoors = { 0, 1, 3, 7, 15, 31, 63, 127, 255, 1023 };
+            int doorsCode = 0;
+            if (doors != null)
+                for (int i = 0; i < doors.Length; i++)
+                {
+                    try
+                    {
+                        unchecked
+                        {
+                            doorsCode |= 1 << doors[i];
+                        }
+                    } catch {}
+                }
+            return
+                "Pin=" + pin + "\t" +
+                "AuthorizeTimezoneId=" + timezoneID + "\t" +
+                "AuthorizeDoorId=" + doorsCode;
+        }
+
         public bool WriteUsers(User[] users) {
               if (!IsConnected() || users.Length == 0) {
                 return false;
@@ -777,16 +801,13 @@ namespace i04PullSDK
                     return false;
                 }
             }
-            int doorCount = GetDoorCount();
-            if (doorCount < 0) {
-                return false;
-            }
+
             for (int k = 0; k < users.Length; k += 100) {
                 StringBuilder sb = new StringBuilder();
                 int end = Math.Min(k + 100, users.Length);
                 for (int i = k; i < end; i++) {
                     // only using default timezone
-                    sb.Append(users[i].AuthTableData(1, doorCount)).Append("\r\n");
+                    sb.Append(AuthTableData(users[i].Password, 1, users[i].Doors)).Append("\r\n");
                 }
                 byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
                 if (SetDeviceData(handle, AUTH_TABLE, data, "") != 0) {
