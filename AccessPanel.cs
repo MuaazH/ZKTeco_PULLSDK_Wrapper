@@ -768,7 +768,7 @@ namespace i04PullSDK
                     {
                         unchecked
                         {
-                            doorsCode |= 1 << doors[i];
+                            doorsCode |= 1 << (doors[i] - 1);
                         }
                     } catch {}
                 }
