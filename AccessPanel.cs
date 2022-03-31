@@ -807,7 +807,7 @@ namespace i04PullSDK
                 int end = Math.Min(k + 100, users.Length);
                 for (int i = k; i < end; i++) {
                     // only using default timezone
-                    sb.Append(AuthTableData(users[i].Password, 1, users[i].Doors)).Append("\r\n");
+                    sb.Append(AuthTableData(users[i].Pin, 1, users[i].Doors)).Append("\r\n");
                 }
                 byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
                 if (SetDeviceData(handle, AUTH_TABLE, data, "") != 0) {
