@@ -2,7 +2,7 @@
 ZKTeco is a really really bad company. DO NOT BUY ITS DEVICES. THEY ARE JUNK.
 
   ZKTeco programmers are so BAD. They made an sdk that neither: hides how the device works nor give you full control over the device.
-  On top of that, they can't speak english for $#!t. I swear google translate can score better than them combined in the ESL test.
+  On top of that, they can't speak english for $#!t. I swear google translate can score better than all of them combined in the ESL test.
   The end result is a security device that can be hacked with a magnet or a paper clip, a verbose and unencrypted network protocol, incomplete and inconsistent documentation, and an SDK that only runs on windows.
   
 # Expert opinion: DO NOT BUY ZKTeco devices
