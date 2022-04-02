@@ -815,6 +815,25 @@ namespace i04PullSDK
                     return false;
                 }
             }
+            Fingerprint[] fingerprints = users
+                    .SelectMany(u => u.Fingerprints == null ? new Fingerprint[0] : u.Fingerprints.Where(f => f.Template != null && f.Template.Length > 100))
+                    .ToArray();
+            for (int k = 0; k < fingerprints.Length; k++)
+            {
+                StringBuilder sb = new StringBuilder();
+                int end = Math.Min(k + 20, users.Length);
+                for (int i = k; i < end; i++)
+                {
+                    // only using default timezone
+                    sb.Append(fingerprints[i].ToString()).Append("\r\n");
+                }
+                byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
+                if (SetDeviceData(handle, FP_TABLE, data, "") != 0)
+                {
+                    failCount++;
+                    return false;
+                }
+            }
             return true;
         }
 
