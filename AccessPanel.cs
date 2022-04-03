@@ -818,10 +818,10 @@ namespace i04PullSDK
             Fingerprint[] fingerprints = users
                     .SelectMany(u => u.Fingerprints == null ? new Fingerprint[0] : u.Fingerprints.Where(f => f.Template != null && f.Template.Length > 100))
                     .ToArray();
-            for (int k = 0; k < fingerprints.Length; k++)
+            for (int k = 0; k < fingerprints.Length; k+= 20)
             {
                 StringBuilder sb = new StringBuilder();
-                int end = Math.Min(k + 20, users.Length);
+                int end = Math.Min(k + 20, fingerprints.Length);
                 for (int i = k; i < end; i++)
                 {
                     // only using default timezone
