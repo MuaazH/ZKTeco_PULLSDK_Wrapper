@@ -816,7 +816,7 @@ namespace i04PullSDK
                 }
             }
             Fingerprint[] fingerprints = users
-                    .SelectMany(u => u.Fingerprints == null ? new Fingerprint[0] : u.Fingerprints.Where(f => f.Template != null && f.Template.Length > 100))
+                    .SelectMany(u => u.Fingerprints == null ? new Fingerprint[0] : u.Fingerprints.Where(f => f != null && f.Template != null && f.Template.Length > 100))
                     .ToArray();
             for (int k = 0; k < fingerprints.Length; k+= 20)
             {
