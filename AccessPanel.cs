@@ -91,6 +91,18 @@ namespace i04PullSDK
         #endregion
     }
     
+    public class UserAuthorization
+    {
+        public UserAuthorization(string pin, int zone, int doors)
+        {
+            Pin = pin;
+            Timezone = zone;
+            Doors = zone;
+        }
+        public string Pin { get; set; }
+        public int Timezone { get; set; }
+        public int Doors { get; set; }
+    }
     public class Fingerprint : IComparable<Fingerprint>
     {
 
@@ -170,6 +182,21 @@ namespace i04PullSDK
         public int[] Doors {
             get { return _doors; }
             set { _doors = value == null ? new int[0] : value; }
+        }
+
+        public void SetDoorsByFlag(int flag)
+        {
+            int count = 0;
+            int[] buf = new int[16];
+            for (int i = 0; i < 16; i++)
+            {
+                int bit = 1 << i;
+                if ((flag & 1) == 1)
+                {
+                    buf[count++] = i;
+                }
+            }
+            Doors = buf.Take(count).ToArray();
         }
         public Fingerprint[] Fingerprints { get; set; }
 
@@ -303,7 +330,7 @@ namespace i04PullSDK
         const string TIMEZONE_TABLE = "timezone";
         const string TRANSACTIONS_TABLE = "transaction";
 
-        const int HugeBufferSize = 16 * 1024 * 1024;
+        const int HugeBufferSize = 203 * 1024 * 1024;
         const int LargeBufferSize = 1024 * 1024 * 2;
 
         [DllImport("plcommpro.dll", EntryPoint = "Connect")]
@@ -409,6 +436,64 @@ namespace i04PullSDK
             return null;
         }
 
+        bool ReadDoors(List<User> users)
+        {
+            if (IsConnected())
+            {
+                byte[] buffer = new byte[HugeBufferSize];
+                int readResult = GetDeviceData(
+                                        handle,
+                                        ref buffer[0],
+                                        buffer.Length,
+                                        AUTH_TABLE,
+                                        "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId",
+                                        "",
+                                        ""
+                                );
+                if (readResult >= 0)
+                {
+                    int len = 0;
+                    while (len < buffer.Length && buffer[len] != 0)
+                    {
+                        len++;
+                    }
+                    UserAuthReader reader = new UserAuthReader(Encoding.ASCII.GetString(buffer, 0, len));
+                    buffer = null; // release memory
+                    users.Sort(); // sort by pin
+                    if (reader.ReadHead())
+                    {
+                        int count = reader.LineCount;
+                        for (int i = 0; i < count; i++)
+                        {
+                            UserAuthorization a = reader.Next();
+                            if (a == null)
+                            {
+                                throw new Exception("Could not parse fingerprints");
+                            }
+                            User tmp = new User(a.Pin, null, null, null, null, null);
+                            int idx = users.BinarySearch(tmp);
+                            if (idx >= 0)
+                            {
+                                users[idx].SetDoorsByFlag(a.Doors);
+                            }
+                            else
+                            {
+                                // A fingerprint without a user. S#!t! I mean poop.
+                                // This should never happen
+                            }
+                        }
+                        return true;
+                    }
+                }
+                else
+                {
+                    failCount++;
+                    return false;
+                }
+            }
+            return false;
+        }
+
         bool ReadFingerprints(List<User> users) {
             if (IsConnected()) {
                 byte[] buffer = new byte[HugeBufferSize];
@@ -500,10 +585,14 @@ namespace i04PullSDK
                                 throw new Exception("Could not parse users");
                             }
                         }
-                        if (ReadFingerprints(users)) {
-                            return users;
+                        if (!ReadFingerprints(users)) {
+                            return null;
                         }
-                        return null;
+                        if (!ReadDoors(users))
+                        {
+                            return null;
+                        }
+                        return users;
                     } else {
                         return null;
                     }
@@ -824,7 +913,6 @@ namespace i04PullSDK
                 int end = Math.Min(k + 20, fingerprints.Length);
                 for (int i = k; i < end; i++)
                 {
-                    // only using default timezone
                     sb.Append(fingerprints[i].ToString()).Append("\r\n");
                 }
                 byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
@@ -1237,6 +1325,52 @@ namespace i04PullSDK
         }
     }
 
+    public class UserAuthReader : CSVReader<UserAuthorization>
+    {
+        int pinIdx;
+        int zoneIdx;
+        int doorsIdx;
+
+        public UserAuthReader(string buffer) : base(buffer) { }
+
+        public override bool ReadHead()
+        {
+            pinIdx = -1;
+            zoneIdx = -1;
+            doorsIdx = -1;
+            string[] head = NextLine();
+            if (head == null) return false;
+            for (int i = 0; i < head.Length; i++)
+            {
+                switch (head[i])
+                {
+                    case "Pin":
+                        pinIdx = i;
+                        break;
+                    case "AuthorizeTimezoneId":
+                        zoneIdx = i;
+                        break;
+                    case "AuthorizeDoorId":
+                        doorsIdx = i;
+                        break;
+                }
+            }
+            return
+                pinIdx > -1 &&
+                zoneIdx > -1 &&
+                doorsIdx > -1;
+        }
+
+        public override UserAuthorization Next()
+        {
+            string[] line = NextLine();
+            return line == null
+                ? null
+                : new UserAuthorization(
+                    line[pinIdx], int.Parse(line[zoneIdx]), int.Parse(line[doorsIdx])
+                );
+        }
+    }
     public class UsersReader : CSVReader<User>
     {
 
