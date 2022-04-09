@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 
 namespace i04PullSDK
 {
-
-    public class Transaction: IComparable<Transaction> {
+    public class Transaction : IComparable<Transaction>
+    {
         public int VirificationMethod { get; set; }
         public string Card { get; set; }
         public string Pin { get; set; }
@@ -18,7 +19,8 @@ namespace i04PullSDK
 
         public static readonly int DeviceBootEvent = 206;
 
-        static readonly int[] accessGrantedCodes = {
+        static readonly int[] accessGrantedCodes =
+        {
             00, // "Normal Punch Open"
             01, // "Punch during Normal Open Time Zone"
             02, // "First Card Normal Open"
@@ -32,26 +34,21 @@ namespace i04PullSDK
             18, // "First Card Normal Open"
             19, // "First Card Normal Open"
             26, // "Multi-Card Authentication"
-            32  // "Multi-Card Authentication"
+            32 // "Multi-Card Authentication"
         };
 
-        static readonly int[] accessDeniedCodes = {
+        static readonly int[] accessDeniedCodes =
+        {
             23, // "Access Denied"
             27, // "Unregistered Card"
             29, // "Card Expired"
             30, // "Password Error"
             33, // "Fingerprint Expired"
-            34  // "Unregistered Fingerprint"
+            34 // "Unregistered Fingerprint"
         };
 
-        public Transaction(int virificationMethod,
-                string card,
-                string pin,
-                int door,
-                int eventType,
-                int inOutState,
-                long timestamp
-        ) {
+        public Transaction(int virificationMethod, string card, string pin, int door, int eventType, int inOutState, long timestamp)
+        {
             VirificationMethod = virificationMethod;
             Card = card;
             Pin = pin;
@@ -60,52 +57,61 @@ namespace i04PullSDK
             InOutState = inOutState;
             Timestamp = timestamp;
         }
-        
-        public bool IsAccessGranted() {
+
+        public bool IsAccessGranted()
+        {
             return Array.BinarySearch(accessGrantedCodes, Event) > -1;
         }
-        
-        public bool IsAccessDenied() {
+
+        public bool IsAccessDenied()
+        {
             return Array.BinarySearch(accessDeniedCodes, Event) > -1;
         }
 
-        public bool IsEntry() {
+        public bool IsEntry()
+        {
             return InOutState == 0;
         }
 
-        public bool IsExit() {
+        public bool IsExit()
+        {
             return InOutState == 1;
         }
-        
+
         #region IComparable implementation
+
         public int CompareTo(Transaction other)
         {
             if (Timestamp < other.Timestamp) return -1;
             if (Timestamp > other.Timestamp) return 1;
-            if (Pin == null) {
+            if (Pin == null)
+            {
                 if (other.Pin == null) return 0;
                 return -1;
             }
+
             return other.Pin == null ? 1 : Pin.CompareTo(other.Pin);
         }
+
         #endregion
     }
-    
+
     public class UserAuthorization
     {
         public UserAuthorization(string pin, int zone, int doors)
         {
             Pin = pin;
             Timezone = zone;
-            Doors = zone;
+            Doors = doors;
         }
+
         public string Pin { get; set; }
         public int Timezone { get; set; }
         public int Doors { get; set; }
     }
+
     public class Fingerprint : IComparable<Fingerprint>
     {
-
         public Fingerprint(string pin, int finger, string template, string endTag)
         {
             Pin = pin;
@@ -118,7 +124,7 @@ namespace i04PullSDK
         public int FingerID { get; set; }
         public string Template { get; set; }
         public string EndTag { get; set; } // idk what this is... :\
-        
+
         string NotNull(string s)
         {
             return s ?? "";
@@ -126,36 +132,29 @@ namespace i04PullSDK
 
         public string Json()
         {
-            return string.Format(
-                "{{\"i\":\"{0}\",\"f\":{1},\"t\":\"{2}\",\"e\":\"{3}\"}}",
-                Pin,
-                FingerID,
-                Template,
-                EndTag
-            );
+            return string.Format("{{\"i\":\"{0}\",\"f\":{1},\"t\":\"{2}\",\"e\":\"{3}\"}}", Pin, FingerID, Template, EndTag);
         }
-        
+
         public override string ToString()
         {
             int size = Template == null ? 0 : Convert.FromBase64String(Template).Length;
-            return "Size=" + size + "\tPin=" + NotNull(Pin) + "\tFingerID=" + FingerID + "\tValid=1\tTemplate="
-                + NotNull(Template)
-                + "\tEndTag=" + NotNull(EndTag);
+            return "Size=" + size + "\tPin=" + NotNull(Pin) + "\tFingerID=" + FingerID + "\tValid=1\tTemplate=" + NotNull(Template) + "\tEndTag=" + NotNull(EndTag);
         }
 
         #region IComparable implementation
+
         public int CompareTo(Fingerprint other)
         {
             // disable once StringCompareToIsCultureSpecific
             int c = NotNull(this.Pin).CompareTo(NotNull(other.Pin));
             return c == 0 ? FingerID.CompareTo(other.FingerID) : c;
         }
+
         #endregion
     }
 
     public class User : IComparable<User>
     {
-
         public User(string pin, string name, string card, string password, string startTime, string endTime)
         {
             Name = name;
@@ -179,7 +178,9 @@ namespace i04PullSDK
         public string Password { get; set; }
         public string StartTime { get; set; }
         public string EndTime { get; set; }
-        public int[] Doors {
+
+        public int[] Doors
+        {
             get { return _doors; }
             set { _doors = value == null ? new int[0] : value; }
         }
@@ -191,52 +192,41 @@ namespace i04PullSDK
             for (int i = 0; i < 16; i++)
             {
                 int bit = 1 << i;
-                if ((flag & 1) == 1)
+                if ((flag & bit) != 0)
                 {
-                    buf[count++] = i;
+                    buf[count++] = i + 1;
                 }
             }
+
             Doors = buf.Take(count).ToArray();
         }
+
         public Fingerprint[] Fingerprints { get; set; }
 
         #region IComparable implementation
+
         public int CompareTo(User other)
         {
             if (other == null) return 1;
             // disable once StringCompareToIsCultureSpecific
-            return NotNull(this.Pin).CompareTo(NotNull(other.Pin));
+            return String.Compare(NotNull(Pin), NotNull(other.Pin), StringComparison.Ordinal);
         }
+
         #endregion
 
-        public string Json()
+        public void RemoveFP(int fingerIndex)
         {
-            // c => card
-            // n => name
-            // f => fromDate
-            // t => toDate
-            // p => Pin
-            // s => Password
-            return
-                "{" +
-                "\"p\":\"" + Pin + "\"," +
-                "\"c\":\"" + Card + "\"," +
-                "\"n\":\"" + Name + "\"," +
-                "\"f\":\"" + StartTime + "\"," +
-                "\"t\":\"" + EndTime + "\"," +
-                "\"s\":\"" + Password + "\"" +
-                "}";
-                
-        }
-        
-        public void RemoveFP(int fingerIndex) {
             List<Fingerprint> good = new List<Fingerprint>();
-            for (int i = 0; i < Fingerprints.Length; i++) {
-                if (Fingerprints[i].FingerID == fingerIndex) {
+            for (int i = 0; i < Fingerprints.Length; i++)
+            {
+                if (Fingerprints[i].FingerID == fingerIndex)
+                {
                     continue;
                 }
+
                 good.Add(Fingerprints[i]);
             }
+
             Fingerprints = good.ToArray();
         }
 
@@ -246,11 +236,13 @@ namespace i04PullSDK
             {
                 throw new IndexOutOfRangeException("A user can only have 10 fingerprints");
             }
+
             Fingerprint[] arr = new Fingerprint[Fingerprints.Length + 1];
             for (int i = 0; i < Fingerprints.Length; i++)
             {
                 arr[i] = Fingerprints[i];
             }
+
             arr[Fingerprints.Length] = f;
             Fingerprints = arr;
         }
@@ -267,24 +259,20 @@ namespace i04PullSDK
                     }
                 }
             }
+
             return false;
         }
 
-        public bool Equals(User that) {
-            return
-                object.Equals(this.Name, that.Name)
-                && object.Equals(this.Password, that.Password)
-                && object.Equals(this.Pin, that.Pin)
-                && object.Equals(this.Card, that.Card)
-                && object.Equals(this.StartTime, that.StartTime)
-                && object.Equals(this.EndTime, that.EndTime);
+        public bool Equals(User that)
+        {
+            return object.Equals(this.Name, that.Name) && object.Equals(this.Password, that.Password) && object.Equals(this.Pin, that.Pin) && object.Equals(this.Card, that.Card) && object.Equals(this.StartTime, that.StartTime) && object.Equals(this.EndTime, that.EndTime);
         }
 
         string NotNull(string s)
         {
             return s ?? "";
         }
-        
+
         public override string ToString()
         {
             /*
@@ -295,34 +283,13 @@ namespace i04PullSDK
                     StartTime
                     EndTime
              */
-            return
-                "CardNo=" + NotNull(Card) + "\t" +
-                "Pin=" + NotNull(Pin) + "\t" +
-                "Name=" + NotNull(Name) + "\t" +
-                "Password=" + NotNull(Password) + "\t" +
-                "StartTime=" + NotNull(StartTime) + "\t" +
-                "EndTime=" + NotNull(EndTime);
+            return "CardNo=" + NotNull(Card) + "\t" + "Pin=" + NotNull(Pin) + "\t" + "Name=" + NotNull(Name) + "\t" + "Password=" + NotNull(Password) + "\t" + "StartTime=" + NotNull(StartTime) + "\t" + "EndTime=" + NotNull(EndTime);
         }
-        
-        public static string Json(User[] users)
-        {
-            StringBuilder sb = new StringBuilder(users.Length * 64);
-            sb.Append("[");
-            if (users.Length > 0)
-            {
-                sb.Append(users[0].Json());
-            }
-            for (int i = 1; i < users.Length; i++)
-            {
-                sb.Append(',').Append(users[i].Json());
-            }
-            return sb.Append("]").ToString();
-        }
-        
+
     }
 
-    public class AccessPanel {
-    
+    public class AccessPanel
+    {
         //const string DEFAULT_TIMEZONE = "TimezoneId=1\tSunTime1=2359\tSunTime2=0\tSunTime3=0\tMonTime1=2359\tMonTime2=0\tMonTime3=0\tTueTime1=2359\tTueTime2=0\tTueTime3=0\tWedTime1=2359\tWedTime2=0\tWedTime3=0\tThuTime1=2359\tThuTime2=0\tThuTime3=0\tFriTime1=2359\tFriTime2=0\tFriTime3=0\tSatTime1=2359\tSatTime2=0\tSatTime3=0\tHol1Time1=2359\tHol1Time2=0\tHol1Time3=0\tHol2Time1=2359\tHol2Time2=0\tHol2Time3=0\tHol3Time1=2359\tHol3Time2=0\tHol3Time3=0";
         const string FP_TABLE = "templatev10";
         const string USER_TABLE = "user";
@@ -350,7 +317,7 @@ namespace i04PullSDK
 
         [DllImport("plcommpro.dll", EntryPoint = "DeleteDeviceData")]
         static extern int DeleteDeviceData(IntPtr handle, string table, string data, string options);
-        
+
         [DllImport("plcommpro.dll", EntryPoint = "ControlDevice")]
         static extern int ControlDevice(IntPtr handle, int operation, int p1, int p2, int p3, int p4, string options);
 
@@ -359,80 +326,92 @@ namespace i04PullSDK
 
         [DllImport("plcommpro.dll", EntryPoint = "GetRTLog")]
         static extern int GetRTLog(IntPtr handle, ref byte buffer, int len);
-        
+
         IntPtr handle = IntPtr.Zero;
         int failCount = 0;
 
-        public int GetLastError() {
+        public int GetLastError()
+        {
             return PullLastError();
         }
-         
-        public bool IsConnected() {
-            if (handle != IntPtr.Zero) {
-                if (failCount > 10) {
+
+        public bool IsConnected()
+        {
+            if (handle != IntPtr.Zero)
+            {
+                if (failCount > 10)
+                {
                     failCount = 0;
                     Disconnect();
                     return false;
                 }
+
                 return true;
             }
+
             return handle != IntPtr.Zero;
         }
 
-        public void Disconnect() {
-            if (IsConnected()) {
+        public void Disconnect()
+        {
+            if (IsConnected())
+            {
                 Disconnect(handle);
                 handle = IntPtr.Zero;
             }
         }
 
-        public bool Connect(string ip, int port, int key, int timeout) {
-            if (IsConnected()) {
+        public bool Connect(string ip, int port, int key, int timeout)
+        {
+            if (IsConnected())
+            {
                 return false;
             }
-            string connStr = "protocol=TCP,ipaddress=" + ip +
-                    ",port=" + port +
-                    ",timeout=" + timeout +
-                ",passwd=" + (key == 0 ? "" : key.ToString());
+
+            string connStr = "protocol=TCP,ipaddress=" + ip + ",port=" + port + ",timeout=" + timeout + ",passwd=" + (key == 0 ? "" : key.ToString());
             handle = Connect(connStr);
-               return handle != IntPtr.Zero;
+            return handle != IntPtr.Zero;
         }
-        
-        public Fingerprint GetFingerprint(string pin, int finger) {
-            if (IsConnected()) {
+
+        public Fingerprint GetFingerprint(string pin, int finger)
+        {
+            if (IsConnected())
+            {
                 byte[] buffer = new byte[LargeBufferSize];
-                int readResult = GetDeviceData(
-                                        handle,
-                                        ref buffer[0],
-                                        buffer.Length,
-                                        FP_TABLE,
-                                        "Size\tPin\tFingerID\tValid\tTemplate\tEndTag",        // fieldNames,
-                                        "Pin=" + pin + ",FingerID=" + finger + ",Valid=1",
-                                        ""
-                                );
-                if (readResult >= 0) {
+                int readResult = GetDeviceData(handle, ref buffer[0], buffer.Length, FP_TABLE, "Size\tPin\tFingerID\tValid\tTemplate\tEndTag", // fieldNames,
+                    "Pin=" + pin + ",FingerID=" + finger + ",Valid=1", "");
+                if (readResult >= 0)
+                {
                     int len = 0;
-                    while (len < buffer.Length && buffer[len] != 0) {
+                    while (len < buffer.Length && buffer[len] != 0)
+                    {
                         len++;
                     }
+
                     FPReader reader = new FPReader(Encoding.ASCII.GetString(buffer, 0, len));
                     buffer = null; // release memory
                     if (reader.ReadHead())
                     {
                         int count = reader.LineCount;
-                           for (int i = 0; i < count; i++) {
+                        for (int i = 0; i < count; i++)
+                        {
                             Fingerprint f = reader.Next();
-                            if (f.FingerID == finger) {
+                            if (f.FingerID == finger)
+                            {
                                 return f;
                             }
                         }
+
                         return new Fingerprint(pin, finger, null, null);
                     }
-                } else {
+                }
+                else
+                {
                     failCount++;
                     return null;
                 }
             }
+
             return null;
         }
 
@@ -441,15 +420,7 @@ namespace i04PullSDK
             if (IsConnected())
             {
                 byte[] buffer = new byte[HugeBufferSize];
-                int readResult = GetDeviceData(
-                                        handle,
-                                        ref buffer[0],
-                                        buffer.Length,
-                                        AUTH_TABLE,
-                                        "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId",
-                                        "",
-                                        ""
-                                );
+                int readResult = GetDeviceData(handle, ref buffer[0], buffer.Length, AUTH_TABLE, "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", "", "");
                 if (readResult >= 0)
                 {
                     int len = 0;
@@ -457,9 +428,8 @@ namespace i04PullSDK
                     {
                         len++;
                     }
+
                     UserAuthReader reader = new UserAuthReader(Encoding.ASCII.GetString(buffer, 0, len));
-                    buffer = null; // release memory
-                    users.Sort(); // sort by pin
                     if (reader.ReadHead())
                     {
                         int count = reader.LineCount;
@@ -468,20 +438,18 @@ namespace i04PullSDK
                             UserAuthorization a = reader.Next();
                             if (a == null)
                             {
-                                throw new Exception("Could not parse fingerprints");
+                                throw new Exception("Could not parse auth data");
                             }
+
                             User tmp = new User(a.Pin, null, null, null, null, null);
                             int idx = users.BinarySearch(tmp);
+
                             if (idx >= 0)
                             {
                                 users[idx].SetDoorsByFlag(a.Doors);
                             }
-                            else
-                            {
-                                // A fingerprint without a user. S#!t! I mean poop.
-                                // This should never happen
-                            }
                         }
+
                         return true;
                     }
                 }
@@ -491,55 +459,63 @@ namespace i04PullSDK
                     return false;
                 }
             }
+
             return false;
         }
 
-        bool ReadFingerprints(List<User> users) {
-            if (IsConnected()) {
+        bool ReadFingerprints(List<User> users)
+        {
+            if (IsConnected())
+            {
                 byte[] buffer = new byte[HugeBufferSize];
-                int readResult = GetDeviceData(
-                                        handle,
-                                        ref buffer[0],
-                                        buffer.Length,
-                                        FP_TABLE,
-                                        //"Size\tPin\tFingerID\tValid\tTemplate\tEndTag",        // fieldNames,
-                                        "Size\tPin\tFingerID\tValid\tEndTag",        // fieldNames,
-                                        "Valid=1",
-                                        ""
-                                );
-                if (readResult >= 0) {
+                int readResult = GetDeviceData(handle, ref buffer[0], buffer.Length, FP_TABLE,
+                    //"Size\tPin\tFingerID\tValid\tTemplate\tEndTag",        // fieldNames,
+                    "Size\tPin\tFingerID\tValid\tEndTag", // fieldNames,
+                    "Valid=1", "");
+                if (readResult >= 0)
+                {
                     int len = 0;
-                    while (len < buffer.Length && buffer[len] != 0) {
+                    while (len < buffer.Length && buffer[len] != 0)
+                    {
                         len++;
                     }
+
                     FPReader reader = new FPReader(Encoding.ASCII.GetString(buffer, 0, len));
                     buffer = null; // release memory
-                    users.Sort(); // sort by pin
                     if (reader.ReadHead())
                     {
                         int count = reader.LineCount;
                         for (int i = 0; i < count; i++)
                         {
                             Fingerprint f = reader.Next();
-                            if (f == null) {
+                            if (f == null)
+                            {
                                 throw new Exception("Could not parse fingerprints");
                             }
+
                             User tmp = new User(f.Pin, null, null, null, null, null);
                             int idx = users.BinarySearch(tmp);
-                            if (idx >= 0) {
+                            if (idx >= 0)
+                            {
                                 users[idx].AddFP(f);
-                            } else {
+                            }
+                            else
+                            {
                                 // A fingerprint without a user. S#!t! I mean poop.
                                 // This should never happen
                             }
                         }
+
                         return true;
                     }
-                } else {
+                }
+                else
+                {
                     failCount++;
                     return false;
                 }
             }
+
             return false;
         }
 
@@ -558,16 +534,21 @@ namespace i04PullSDK
                 }
             }
         }
-*/        
+*/
 
-        public List<User> ReadUsers() {
-            if (IsConnected()) {
+        public List<User> ReadUsers()
+        {
+            if (IsConnected())
+            {
                 byte[] buffer = new byte[HugeBufferSize];
-                if (GetDeviceData(handle, ref buffer[0], buffer.Length, USER_TABLE, "*", "", "") >= 0) {
+                if (GetDeviceData(handle, ref buffer[0], buffer.Length, USER_TABLE, "*", "", "") >= 0)
+                {
                     int len = 0;
-                    while (len < buffer.Length && buffer[len] != 0) {
+                    while (len < buffer.Length && buffer[len] != 0)
+                    {
                         len++;
                     }
+
                     UsersReader reader = new UsersReader(Encoding.ASCII.GetString(buffer, 0, len));
                     buffer = null; // release memory
                     if (reader.ReadHead())
@@ -578,124 +559,171 @@ namespace i04PullSDK
                         {
                             return users;
                         }
+
                         for (int i = 0; i < count; i++)
                         {
                             users.Add(reader.Next());
-                            if (users[i] == null) {
+                            if (users[i] == null)
+                            {
                                 throw new Exception("Could not parse users");
                             }
                         }
-                        if (!ReadFingerprints(users)) {
+
+                        users.Sort(); // sort by pin
+                        if (!ReadFingerprints(users))
+                        {
                             return null;
                         }
+
                         if (!ReadDoors(users))
                         {
                             return null;
                         }
+
                         return users;
-                    } else {
+                    }
+                    else
+                    {
                         return null;
                     }
-                } else {
+                }
+                else
+                {
                     failCount++;
                     return null;
                 }
             }
+
             return null;
         }
 
-        public Transaction[] ReadTransactionLog(long startingTimestamp) {
-            if (!IsConnected()) {
+        public Transaction[] ReadTransactionLog(long startingTimestamp)
+        {
+            if (!IsConnected())
+            {
                 return null;
             }
-               byte[] buffer = new byte[HugeBufferSize];
-               if (GetDeviceData(handle, ref buffer[0], buffer.Length, TRANSACTIONS_TABLE, "*", "", "") < 0) {
-                   failCount++;
-                   return null;
-               }
-               int len = 0;
-               while (len < buffer.Length && buffer[len] != 0) {
-                   len++;
-               }
-               string txt = Encoding.ASCII.GetString(buffer, 0, len);
-               //System.IO.File.AppendAllText("log_buffer", txt);
-               TransactionReader reader = new TransactionReader(txt);
-               if (!reader.ReadHead()) {
-                   return null;
-               }
-               int maxCount = reader.LineCount;
-               List<Transaction> transactions = new List<Transaction>(maxCount);
-               for (int i = 0; i < maxCount; i++) {
-                   Transaction t = reader.Next();
-                   if (t == null) {
-                       continue;
-                   }
-                   if (t.Timestamp >= startingTimestamp) {
-                       if (t.IsAccessDenied() || t.IsAccessGranted()) {
-                           if (!string.IsNullOrWhiteSpace(t.Card)) {
-                               transactions.Add(t);
-                           }
-                       }
-                   }
-               }
-               transactions.Sort();
-               return transactions.ToArray();
+
+            byte[] buffer = new byte[HugeBufferSize];
+            if (GetDeviceData(handle, ref buffer[0], buffer.Length, TRANSACTIONS_TABLE, "*", "", "") < 0)
+            {
+                failCount++;
+                return null;
+            }
+
+            int len = 0;
+            while (len < buffer.Length && buffer[len] != 0)
+            {
+                len++;
+            }
+
+            string txt = Encoding.ASCII.GetString(buffer, 0, len);
+            //System.IO.File.AppendAllText("log_buffer", txt);
+            TransactionReader reader = new TransactionReader(txt);
+            if (!reader.ReadHead())
+            {
+                return null;
+            }
+
+            int maxCount = reader.LineCount;
+            List<Transaction> transactions = new List<Transaction>(maxCount);
+            for (int i = 0; i < maxCount; i++)
+            {
+                Transaction t = reader.Next();
+                if (t == null)
+                {
+                    continue;
+                }
+
+                if (t.Timestamp >= startingTimestamp)
+                {
+                    if (t.IsAccessDenied() || t.IsAccessGranted())
+                    {
+                        if (!string.IsNullOrWhiteSpace(t.Card))
+                        {
+                            transactions.Add(t);
+                        }
+                    }
+                }
+            }
+
+            transactions.Sort();
+            return transactions.ToArray();
         }
 
-        public static bool IsPasswordValid(string pass) {
+        public static bool IsPasswordValid(string pass)
+        {
             if (pass == null) return false;
-            if (pass.Length == 0) {
+            if (pass.Length == 0)
+            {
                 return true;
             }
+
             foreach (char c in pass)
             {
                 if (c < '0' || c > '9')
                     return false;
             }
+
             return true;
         }
-        
-        public static bool IsCardValid(string card) {
+
+        public static bool IsCardValid(string card)
+        {
             if (card == null) return false;
             if (card.Length == 0) return true;
             ulong x;
-               if (!ulong.TryParse(card, out x)) {
-                   return false;
-               }
-               return true;
+            if (!ulong.TryParse(card, out x))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public static bool IsPinValid(string pin)
         {
-            if (string.IsNullOrWhiteSpace(pin)) {
+            if (string.IsNullOrWhiteSpace(pin))
+            {
                 return false;
             }
-               ulong x;
-               if (!ulong.TryParse(pin, out x)) {
-                   return false;
-               }
-               return x <= uint.MaxValue;
+
+            ulong x;
+            if (!ulong.TryParse(pin, out x))
+            {
+                return false;
+            }
+
+            return x <= uint.MaxValue;
         }
 
-        public bool WriteUser(User u) {
-            return WriteUsers(new User[]{u});
+        public bool WriteUser(User u)
+        {
+            return WriteUsers(new User[] {u});
         }
 
-        public bool DeleteUser(string pin) {
-            if (!IsConnected()) {
+        public bool DeleteUser(string pin)
+        {
+            if (!IsConnected())
+            {
                 return false;
             }
-            if (!DeleteUserFingerprints(pin)) {
+
+            if (!DeleteUserFingerprints(pin))
+            {
                 return false;
             }
+
             //if (!DeleteUserTimezones(pin)) {
-                //return false;
+            //return false;
             //}
             DeleteUserTimezones(pin);
             //DeleteUserTransactions(pin);
-            if (0 <= DeleteDeviceData(handle, USER_TABLE, "Pin=" + pin, "")) {
+            if (0 <= DeleteDeviceData(handle, USER_TABLE, "Pin=" + pin, ""))
+            {
                 return true;
             }
+
             failCount++;
             return false;
         }
@@ -706,28 +734,37 @@ namespace i04PullSDK
             {
                 return false;
             }
+
             bool failed = false;
             DeleteDeviceData(handle, TRANSACTIONS_TABLE, "doorid=", "");
             for (int i = 0; i < 10; i++)
             {
-                if (0 > DeleteDeviceData(handle, TRANSACTIONS_TABLE, "doorid="+i, ""))
+                if (0 > DeleteDeviceData(handle, TRANSACTIONS_TABLE, "doorid=" + i, ""))
                 {
                     failed = true;
                 }
             }
+
             if (failed)
             {
                 failCount++;
             }
+
             return true;
         }
-        public bool DeleteUserByCard(string card) {
-            if (!IsConnected()) {
+
+        public bool DeleteUserByCard(string card)
+        {
+            if (!IsConnected())
+            {
                 return false;
             }
-            if (0 <= DeleteDeviceData(handle, USER_TABLE, "CardNo=" + card, "")) {
+
+            if (0 <= DeleteDeviceData(handle, USER_TABLE, "CardNo=" + card, ""))
+            {
                 return true;
             }
+
             failCount++;
             return false;
             /*
@@ -757,13 +794,18 @@ namespace i04PullSDK
             */
         }
 
-        public bool DeleteUserFingerprints(string pin) {
-            if (!IsConnected()) {
+        public bool DeleteUserFingerprints(string pin)
+        {
+            if (!IsConnected())
+            {
                 return false;
             }
-            if (0 <= DeleteDeviceData(handle, FP_TABLE, "Pin=" + pin, "")) {
+
+            if (0 <= DeleteDeviceData(handle, FP_TABLE, "Pin=" + pin, ""))
+            {
                 return true;
             }
+
             failCount++;
             return false;
         }
@@ -774,23 +816,28 @@ namespace i04PullSDK
             {
                 return false;
             }
+
             if (0 <= DeleteDeviceData(handle, AUTH_TABLE, "Pin=" + pin, ""))
             {
                 return true;
             }
+
             failCount++;
             return false;
         }
+
         public bool DeleteUserTransactions(string pin)
         {
             if (!IsConnected())
             {
                 return false;
             }
+
             if (0 <= DeleteDeviceData(handle, TRANSACTIONS_TABLE, "pin=" + pin, ""))
             {
                 return true;
             }
+
             failCount++;
             return false;
         }
@@ -801,53 +848,50 @@ namespace i04PullSDK
             {
                 return false;
             }
-            if (0 <= DeleteDeviceData(handle, FP_TABLE, "", "")
-                    && 0 <= DeleteDeviceData(handle, USER_TABLE, "", "")
-                    && 0 <= DeleteDeviceData(handle, AUTH_TABLE, "", "")
-                    && 0 <= DeleteDeviceData(handle, TIMEZONE_TABLE, "", "")
-                    && 0 <= DeleteDeviceData(handle, TRANSACTIONS_TABLE, "", ""))
+
+            if (0 <= DeleteDeviceData(handle, FP_TABLE, "", "") && 0 <= DeleteDeviceData(handle, USER_TABLE, "", "") && 0 <= DeleteDeviceData(handle, AUTH_TABLE, "", "") && 0 <= DeleteDeviceData(handle, TIMEZONE_TABLE, "", "") && 0 <= DeleteDeviceData(handle, TRANSACTIONS_TABLE, "", ""))
             {
                 return true;
             }
+
             failCount++;
             return false;
         }
 
-        public bool DeleteFingerprint(string pin, int finger) {
-            if (!IsConnected()) {
+        public bool DeleteFingerprint(string pin, int finger)
+        {
+            if (!IsConnected())
+            {
                 return false;
             }
-            if (0 <= DeleteDeviceData(handle, FP_TABLE, "Pin=" + pin + ",FingerID=" + finger, "")) {
+
+            if (0 <= DeleteDeviceData(handle, FP_TABLE, "Pin=" + pin + ",FingerID=" + finger, ""))
+            {
                 return true;
             }
+
             failCount++;
             return false;
         }
-        
-        string TimezoneString(int[] conf) {
-            return string.Format(
-                "TimezoneId=1\tSunTime1={6}\tSunTime2={7}\tSunTime3={8}\tMonTime1={9}\tMonTime2={10}\tMonTime3={11}\tTueTime1={12}\tTueTime2={13}\tTueTime3={14}\tWedTime1={15}\tWedTime2={16}\tWedTime3={17}\tThuTime1={18}\tThuTime2={19}\tThuTime3={20}\tFriTime1={0}\tFriTime2={1}\tFriTime3={2}\tSatTime1={3}\tSatTime2={4}\tSatTime3={5}\tHol1Time1=2359\tHol1Time2=0\tHol1Time3=0\tHol2Time1=2359\tHol2Time2=0\tHol2Time3=0\tHol3Time1=2359\tHol3Time2=0\tHol3Time3=0",
-                conf[0], conf[1], conf[2],
-                conf[3], conf[4], conf[5],
-                conf[6], conf[7], conf[8],
-                conf[9], conf[10], conf[11],
-                conf[12], conf[13], conf[14],
-                conf[15], conf[16], conf[17],
-                conf[18], conf[19], conf[20]
-            );
+
+        string TimezoneString(int[] conf)
+        {
+            return string.Format("TimezoneId=1\tSunTime1={6}\tSunTime2={7}\tSunTime3={8}\tMonTime1={9}\tMonTime2={10}\tMonTime3={11}\tTueTime1={12}\tTueTime2={13}\tTueTime3={14}\tWedTime1={15}\tWedTime2={16}\tWedTime3={17}\tThuTime1={18}\tThuTime2={19}\tThuTime3={20}\tFriTime1={0}\tFriTime2={1}\tFriTime3={2}\tSatTime1={3}\tSatTime2={4}\tSatTime3={5}\tHol1Time1=2359\tHol1Time2=0\tHol1Time3=0\tHol2Time1=2359\tHol2Time2=0\tHol2Time3=0\tHol3Time1=2359\tHol3Time2=0\tHol3Time3=0", conf[0], conf[1], conf[2], conf[3], conf[4], conf[5], conf[6], conf[7], conf[8], conf[9], conf[10], conf[11], conf[12], conf[13], conf[14], conf[15], conf[16], conf[17], conf[18], conf[19], conf[20]);
         }
-        
-        public bool WriteTimezone(int[] tz) {
+
+        public bool WriteTimezone(int[] tz)
+        {
             byte[] defaultTimeZoneData = Encoding.ASCII.GetBytes(TimezoneString(tz));
-            if (SetDeviceData(handle, TIMEZONE_TABLE, defaultTimeZoneData, "") != 0) {
+            if (SetDeviceData(handle, TIMEZONE_TABLE, defaultTimeZoneData, "") != 0)
+            {
                 return false;
             }
+
             return true;
         }
 
         private string AuthTableData(string pin, int timezoneID, int[] doors)
         {
-
             //int[] allDoors = { 0, 1, 3, 7, 15, 31, 63, 127, 255, 1023 };
             int doorsCode = 0;
             if (doors != null)
@@ -859,18 +903,22 @@ namespace i04PullSDK
                         {
                             doorsCode |= 1 << (doors[i] - 1);
                         }
-                    } catch {}
+                    }
+                    catch
+                    {
+                    }
                 }
-            return
-                "Pin=" + pin + "\t" +
-                "AuthorizeTimezoneId=" + timezoneID + "\t" +
-                "AuthorizeDoorId=" + doorsCode;
+
+            return "Pin=" + pin + "\t" + "AuthorizeTimezoneId=" + timezoneID + "\t" + "AuthorizeDoorId=" + doorsCode;
         }
 
-        public bool WriteUsers(User[] users) {
-              if (!IsConnected() || users.Length == 0) {
+        public bool WriteUsers(User[] users)
+        {
+            if (!IsConnected() || users.Length == 0)
+            {
                 return false;
             }
+
             /*for (int i = 0; i < users.Length; i++) {
                 User u = users[i];
                 if (!IsPinValid(u.Pin) || !IsCardValid(u.Card))
@@ -878,36 +926,43 @@ namespace i04PullSDK
                     return false;
                 }
             }*/
-            for (int k = 0; k < users.Length; k += 100) {
+            for (int k = 0; k < users.Length; k += 100)
+            {
                 StringBuilder sb = new StringBuilder();
                 int end = Math.Min(k + 100, users.Length);
-                for (int i = k; i < end; i++) {
+                for (int i = k; i < end; i++)
+                {
                     sb.Append(users[i].ToString()).Append("\r\n");
                 }
+
                 byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-                if (SetDeviceData(handle, USER_TABLE, data, "") != 0) {
+                if (SetDeviceData(handle, USER_TABLE, data, "") != 0)
+                {
                     failCount++;
                     return false;
                 }
             }
 
-            for (int k = 0; k < users.Length; k += 100) {
+            for (int k = 0; k < users.Length; k += 100)
+            {
                 StringBuilder sb = new StringBuilder();
                 int end = Math.Min(k + 100, users.Length);
-                for (int i = k; i < end; i++) {
+                for (int i = k; i < end; i++)
+                {
                     // only using default timezone
                     sb.Append(AuthTableData(users[i].Pin, 1, users[i].Doors)).Append("\r\n");
                 }
+
                 byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-                if (SetDeviceData(handle, AUTH_TABLE, data, "") != 0) {
+                if (SetDeviceData(handle, AUTH_TABLE, data, "") != 0)
+                {
                     failCount++;
                     return false;
                 }
             }
-            Fingerprint[] fingerprints = users
-                    .SelectMany(u => u.Fingerprints == null ? new Fingerprint[0] : u.Fingerprints.Where(f => f != null && f.Template != null && f.Template.Length > 100))
-                    .ToArray();
-            for (int k = 0; k < fingerprints.Length; k+= 20)
+
+            Fingerprint[] fingerprints = users.SelectMany(u => u.Fingerprints == null ? new Fingerprint[0] : u.Fingerprints.Where(f => f != null && f.Template != null && f.Template.Length > 100)).ToArray();
+            for (int k = 0; k < fingerprints.Length; k += 20)
             {
                 StringBuilder sb = new StringBuilder();
                 int end = Math.Min(k + 20, fingerprints.Length);
@@ -915,6 +970,7 @@ namespace i04PullSDK
                 {
                     sb.Append(fingerprints[i].ToString()).Append("\r\n");
                 }
+
                 byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
                 if (SetDeviceData(handle, FP_TABLE, data, "") != 0)
                 {
@@ -922,209 +978,260 @@ namespace i04PullSDK
                     return false;
                 }
             }
+
             return true;
         }
 
-        public bool AddFingerprint(Fingerprint fp) {
-            return AddFingerprints(new Fingerprint[] { fp });
+        public bool AddFingerprint(Fingerprint fp)
+        {
+            return AddFingerprints(new Fingerprint[] {fp});
         }
-    
+
         public bool AddFingerprints(Fingerprint[] fpList)
         {
-              if (!IsConnected() || fpList.Length == 0) {
+            if (!IsConnected() || fpList.Length == 0)
+            {
                 return false;
             }
+
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < fpList.Length; i++) {
+            for (int i = 0; i < fpList.Length; i++)
+            {
                 if (!IsPinValid(fpList[i].Pin) || fpList[i].Template == null || fpList[i].Template.Length < 100)
                 {
                     return false;
                 }
+
                 sb.Append(fpList[i].ToString()).Append("\r\n");
             }
+
             byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-            if (SetDeviceData(handle, FP_TABLE, data, "") == 0) {
+            if (SetDeviceData(handle, FP_TABLE, data, "") == 0)
+            {
                 return true;
             }
+
             failCount++;
             return false;
         }
 
-        public bool StopAlarm() {
-            if (!IsConnected()) {
+        public bool StopAlarm()
+        {
+            if (!IsConnected())
+            {
                 return false;
             }
-            if (0 <= ControlDevice(
-                handle,
-                2,  // Operation id
-                0,  // null
-                0,  // null
-                0,  // null
-                0,  // Reserved,
-                ""  // Options
-            )) {
+
+            if (0 <= ControlDevice(handle, 2, // Operation id
+                0, // null
+                0, // null
+                0, // null
+                0, // Reserved,
+                "" // Options
+            ))
+            {
                 return true;
             }
+
             failCount++;
             return false;
         }
-        
-           // first door is 1
-        public bool OpenDoor(int doorId, int seconds) {
-            if (!IsConnected() || seconds < 1 || seconds > 60) {
+
+        // first door is 1
+        public bool OpenDoor(int doorId, int seconds)
+        {
+            if (!IsConnected() || seconds < 1 || seconds > 60)
+            {
                 return false;
             }
-            if (0 <= ControlDevice(
-                handle,
-                1,       // Operation id
-                doorId,  // Door id
-                1,       // Output address
+
+            if (0 <= ControlDevice(handle, 1, // Operation id
+                doorId, // Door id
+                1, // Output address
                 seconds, // DoorState (in seconds)
-                0,       // Reserved,
-                ""       // Options
-            )) {
+                0, // Reserved,
+                "" // Options
+            ))
+            {
                 return true;
             }
-            failCount++;
-            return false;
-        }
-        
-           // first door is 1
-        public bool CloseDoor(int doorId) {
-            if (!IsConnected()) {
-                return false;
-            }
-            if (ControlDevice(
-                handle,
-                1,       // Operation id
-                doorId,  // Door id
-                1,       // Output address
-                0,       // Disabled = closed?
-                0,       // Reserved,
-                ""       // Options
-            ) >= 0) {
-                return true;
-            }
+
             failCount++;
             return false;
         }
 
-        public int GetDoorCount() {
-            if (!IsConnected()) {
+        // first door is 1
+        public bool CloseDoor(int doorId)
+        {
+            if (!IsConnected())
+            {
+                return false;
+            }
+
+            if (ControlDevice(handle, 1, // Operation id
+                doorId, // Door id
+                1, // Output address
+                0, // Disabled = closed?
+                0, // Reserved,
+                "" // Options
+            ) >= 0)
+            {
+                return true;
+            }
+
+            failCount++;
+            return false;
+        }
+
+        public int GetDoorCount()
+        {
+            if (!IsConnected())
+            {
                 return -1;
             }
+
             byte[] buffer = new byte[2048];
-            if (-1 < GetDeviceParam(handle, ref buffer[0], buffer.Length, "LockCount")) {
-                string str = Encoding.ASCII
-                    .GetString(buffer)
-                    .Trim()
-                    .Replace("LockCount=", "");
+            if (-1 < GetDeviceParam(handle, ref buffer[0], buffer.Length, "LockCount"))
+            {
+                string str = Encoding.ASCII.GetString(buffer).Trim().Replace("LockCount=", "");
                 int count;
-                if (int.TryParse(str, out count)) {
+                if (int.TryParse(str, out count))
+                {
                     return count;
                 }
-            } else {
+            }
+            else
+            {
                 failCount++;
                 return -1;
             }
+
             return -1;
         }
-        
+
         string lastEventTime = "0000-00-00 00:00:00";
 
-        public AccessPanelEvent GetEventLog() {
-            if (IsConnected()) {
+        public AccessPanelEvent GetEventLog()
+        {
+            if (IsConnected())
+            {
                 byte[] buf = new byte[LargeBufferSize];
-                if (GetRTLog(handle, ref buf[0], buf.Length) > -1) {
+                if (GetRTLog(handle, ref buf[0], buf.Length) > -1)
+                {
                     string tempLastEventTime = lastEventTime;
-                    string[] events = Encoding.ASCII.GetString(buf)
-                        .Replace("\0", "")
-                        .Trim()
-                        .Split(new string[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
+                    string[] events = Encoding.ASCII.GetString(buf).Replace("\0", "").Trim().Split(new string[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
                     List<AccessPanelRTEvent> rtEvents = new List<AccessPanelRTEvent>();
                     AccessPanelDoorsStatus doorsStatus = null;
-                    for (int i = 0; i < events.Length; i++) {
-                        if (events[i][0] == '\0') {
+                    for (int i = 0; i < events.Length; i++)
+                    {
+                        if (events[i][0] == '\0')
+                        {
                             continue;
                         }
+
                         string[] values = events[i].Split(new char[] {','});
-                        if (values.Length != 7) {
+                        if (values.Length != 7)
+                        {
                             continue;
                         }
-                        if (values[0].CompareTo(tempLastEventTime) > 0) {
+
+                        if (values[0].CompareTo(tempLastEventTime) > 0)
+                        {
                             tempLastEventTime = values[0];
                         }
+
                         lastEventTime = values[0];
-                        if (values[4].Equals("255")) {
+                        if (values[4].Equals("255"))
+                        {
                             doorsStatus = new AccessPanelDoorsStatus(values[1], values[2]);
-                        } else {
-                            if (values[0].CompareTo(lastEventTime) < 0) {
+                        }
+                        else
+                        {
+                            if (values[0].CompareTo(lastEventTime) < 0)
+                            {
                                 continue;
                             }
+
                             AccessPanelRTEvent evt = new AccessPanelRTEvent(values[0], values[1], values[3], int.Parse(values[4]), int.Parse(values[5]));
                             rtEvents.Add(evt);
                         }
                     }
+
                     lastEventTime = tempLastEventTime;
                     return new AccessPanelEvent(doorsStatus, rtEvents.ToArray());
-                } else {
+                }
+                else
+                {
                     failCount++;
                     return null;
                 }
             }
+
             return null;
         }
-
     }
 
-    public class AccessPanelDoorsStatus {
-
+    public class AccessPanelDoorsStatus
+    {
         readonly int door;
         readonly int alarm;
-        
-        public AccessPanelDoorsStatus(string door, string alarm) {
+
+        public AccessPanelDoorsStatus(string door, string alarm)
+        {
             this.door = int.Parse(door);
             this.alarm = int.Parse(alarm);
         }
-        
-        public bool IsDoorClosed(int i) {
-            return ((door >> (i*8)) & 255) == 1;
+
+        public bool IsDoorClosed(int i)
+        {
+            return ((door >> (i * 8)) & 255) == 1;
         }
 
-        public bool IsDoorOpen(int i) {
-            return ((door >> (i*8)) & 255) == 2;
+        public bool IsDoorOpen(int i)
+        {
+            return ((door >> (i * 8)) & 255) == 2;
         }
 
-        public bool IsDoorSensorWorking(int i) {
-            return ((door >> (i*8)) & 255) != 0;
+        public bool IsDoorSensorWorking(int i)
+        {
+            return ((door >> (i * 8)) & 255) != 0;
         }
 
-        public bool IsAlarmOn(int i) {
-            return ((alarm >> (i*8)) & 255) != 0;
+        public bool IsAlarmOn(int i)
+        {
+            return ((alarm >> (i * 8)) & 255) != 0;
         }
-        
-        public string ToString(int i) {
+
+        public string ToString(int i)
+        {
             string a = (IsAlarmOn(i) ? ", ALARM!" : "");
-            if (IsDoorClosed(i)) {
+            if (IsDoorClosed(i))
+            {
                 return "Closed" + a;
             }
-            if (IsDoorOpen(i)) {
+
+            if (IsDoorOpen(i))
+            {
                 return "Open" + a;
             }
-            if (!IsDoorSensorWorking(i)) {
+
+            if (!IsDoorSensorWorking(i))
+            {
                 return "Sensor Not Working" + a;
             }
-            return "Code " + ((door >> (i*8)) & 255) + a;
+
+            return "Code " + ((door >> (i * 8)) & 255) + a;
         }
     }
 
-    public class AccessPanelRTEvent {
+    public class AccessPanelRTEvent
+    {
         public readonly string time;
         public readonly string pin;
         public readonly string door;
         public readonly int eventType;
         public readonly int inOrOut;
-        
+
         public AccessPanelRTEvent(string time, string pin, string door, int eventType, int inOrOut)
         {
             this.time = time;
@@ -1134,31 +1241,43 @@ namespace i04PullSDK
             this.inOrOut = inOrOut;
         }
 
-        public int GetDoorID() {
-            try {
+        public int GetDoorID()
+        {
+            try
+            {
                 return !string.IsNullOrEmpty(door) ? int.Parse(door) : -1;
-            } catch {
+            }
+            catch
+            {
                 return -1;
             }
         }
-        
+
         public override string ToString()
         {
             string s = GetDescription(eventType);
-            if (s == null) {
+            if (s == null)
+            {
                 s = "Unknown event";
             }
-            if (!string.IsNullOrWhiteSpace(pin) && !"0".Equals(pin)) {
+
+            if (!string.IsNullOrWhiteSpace(pin) && !"0".Equals(pin))
+            {
                 s += ", " + (inOrOut == 0 ? "Entry" : (inOrOut == 1 ? "Exit" : "User")) + ": " + pin;
             }
-            if (!string.IsNullOrWhiteSpace(door) && !"0".Equals(door)) {
+
+            if (!string.IsNullOrWhiteSpace(door) && !"0".Equals(door))
+            {
                 s += ", Door: " + door;
             }
+
             return "* Event: " + s;
         }
 
-        public static string GetDescription(int code) {
-            string[] e = {
+        public static string GetDescription(int code)
+        {
+            string[] e =
+            {
                 /*00*/ "Normal Punch Open",
                 /*01*/ "Punch during Normal Open Time Zone",
                 /*02*/ "First Card Normal Open",
@@ -1198,10 +1317,13 @@ namespace i04PullSDK
                 /*36*/ "Door Inactive Time Zone",
                 /*37*/ "Failed to Close during Normal Open Time Zone",
             };
-            if (code < 37 && code > -1) {
+            if (code < 37 && code > -1)
+            {
                 return e[code];
             }
-            switch (code) {
+
+            switch (code)
+            {
                 case 101:
                     return "Duress Password Open";
                 case 102:
@@ -1221,15 +1343,18 @@ namespace i04PullSDK
                 case 221:
                     return "Auxiliary Input Shorted";
             }
+
             return null;
         }
     }
 
-    public class AccessPanelEvent {
+    public class AccessPanelEvent
+    {
         public readonly AccessPanelDoorsStatus DoorsStatus;
         public readonly AccessPanelRTEvent[] Events;
-        
-        public AccessPanelEvent(AccessPanelDoorsStatus DoorsStatus, AccessPanelRTEvent[] Events) {
+
+        public AccessPanelEvent(AccessPanelDoorsStatus DoorsStatus, AccessPanelRTEvent[] Events)
+        {
             this.DoorsStatus = DoorsStatus;
             this.Events = Events;
         }
@@ -1247,7 +1372,7 @@ namespace i04PullSDK
         {
             //this.buffer = buffer;
             //offset = 0;
-            lines = buffer.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            lines = buffer.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
             index = 0;
             LineCount = lines.Length - 1;
         }
@@ -1255,7 +1380,7 @@ namespace i04PullSDK
         protected string[] NextLine()
         {
             if (lines == null || index >= lines.Length) return null;
-            string[] result = lines[index].Split(new[] { ',' }, StringSplitOptions.None);
+            string[] result = lines[index].Split(new[] {','}, StringSplitOptions.None);
             // I must clear pointers i don't need
             // fingerprints can take up to megabytes of strings...
             lines[index] = null;
@@ -1270,13 +1395,14 @@ namespace i04PullSDK
 
     public class FPReader : CSVReader<Fingerprint>
     {
-
         int pinIndex;
         int fidIndex;
         int templateIndex;
         int etagIndex;
 
-        public FPReader(string buffer) : base(buffer) { }
+        public FPReader(string buffer) : base(buffer)
+        {
+        }
 
         public override bool ReadHead()
         {
@@ -1304,24 +1430,16 @@ namespace i04PullSDK
                         break;
                 }
             }
-            return
-                etagIndex > -1 &&
+
+            return etagIndex > -1 &&
 //                templateIndex > -1 &&
-                pinIndex > -1 &&
-                fidIndex > -1;
+                   pinIndex > -1 && fidIndex > -1;
         }
 
         public override Fingerprint Next()
         {
             string[] line = NextLine();
-            return line == null
-                ? null
-                : new Fingerprint(
-                        line[pinIndex],
-                        int.Parse(line[fidIndex]),
-                        templateIndex > -1 ? line[templateIndex] : null,
-                        line[etagIndex]
-                );
+            return line == null ? null : new Fingerprint(line[pinIndex], int.Parse(line[fidIndex]), templateIndex > -1 ? line[templateIndex] : null, line[etagIndex]);
         }
     }
 
@@ -1331,7 +1449,9 @@ namespace i04PullSDK
         int zoneIdx;
         int doorsIdx;
 
-        public UserAuthReader(string buffer) : base(buffer) { }
+        public UserAuthReader(string buffer) : base(buffer)
+        {
+        }
 
         public override bool ReadHead()
         {
@@ -1355,25 +1475,19 @@ namespace i04PullSDK
                         break;
                 }
             }
-            return
-                pinIdx > -1 &&
-                zoneIdx > -1 &&
-                doorsIdx > -1;
+
+            return pinIdx > -1 && zoneIdx > -1 && doorsIdx > -1;
         }
 
         public override UserAuthorization Next()
         {
             string[] line = NextLine();
-            return line == null
-                ? null
-                : new UserAuthorization(
-                    line[pinIdx], int.Parse(line[zoneIdx]), int.Parse(line[doorsIdx])
-                );
+            return line == null ? null : new UserAuthorization(line[pinIdx], int.Parse(line[zoneIdx]), int.Parse(line[doorsIdx]));
         }
     }
+
     public class UsersReader : CSVReader<User>
     {
-
         int cardIndex;
         int nameIndex;
         int startDateIndex;
@@ -1418,32 +1532,19 @@ namespace i04PullSDK
                         break;
                 }
             }
-            return
-                cardIndex > -1 &&
-                nameIndex > -1 &&
-                startDateIndex > -1 &&
-                endDateIndex > -1 &&
-                passIndex > -1 &&
-                pinIndex > -1;
+
+            return cardIndex > -1 && nameIndex > -1 && startDateIndex > -1 && endDateIndex > -1 && passIndex > -1 && pinIndex > -1;
         }
 
         public override User Next()
         {
             string[] line = NextLine();
-            return line == null
-                ? null
-                : new User(
-                    line[pinIndex],
-                    line[nameIndex],
-                    line[cardIndex],
-                    line[passIndex],
-                    line[startDateIndex],
-                    line[endDateIndex]
-                );
+            return line == null ? null : new User(line[pinIndex], line[nameIndex], line[cardIndex], line[passIndex], line[startDateIndex], line[endDateIndex]);
         }
     }
 
-    public class TransactionReader : CSVReader<Transaction> {
+    public class TransactionReader : CSVReader<Transaction>
+    {
         public int vmIndex;
         public int cardIndex;
         public int pinIndex;
@@ -1451,7 +1552,7 @@ namespace i04PullSDK
         public int eventIndex;
         public int inOutStateIndex;
         public int timestampIndex;
-        
+
         public TransactionReader(string buffer) : base(buffer)
         {
         }
@@ -1495,23 +1596,21 @@ namespace i04PullSDK
                         break;
                 }
             }
-            return  vmIndex > -1 &&
-                    cardIndex > -1 &&
-                    pinIndex > -1 &&
-                    doorIndex > -1 &&
-                    eventIndex > -1 &&
-                    inOutStateIndex > -1 &&
-                    timestampIndex > -1;
+
+            return vmIndex > -1 && cardIndex > -1 && pinIndex > -1 && doorIndex > -1 && eventIndex > -1 && inOutStateIndex > -1 && timestampIndex > -1;
         }
-        
+
         static readonly DateTime T0 = new DateTime(1970, 1, 1, 0, 0, 0);
-        
-        long ToEpoch(DateTime t) {
+
+        long ToEpoch(DateTime t)
+        {
             return (long) (t - T0).TotalSeconds;
         }
 
-        long ToTimestamp(long timeCoded) {
-            try {
+        long ToTimestamp(long timeCoded)
+        {
+            try
+            {
                 long t = timeCoded;
                 int second = (int) (t % 60);
                 t /= 60L;
@@ -1525,27 +1624,18 @@ namespace i04PullSDK
                 t /= 12;
                 int year = (int) t + 2000;
                 return ToEpoch(new DateTime(year, month, day, hour, minute, second));
-            } catch {
+            }
+            catch
+            {
                 return 0;
                 throw new Exception("Invalid timestamp " + timeCoded);
             }
         }
-        
+
         public override Transaction Next()
         {
             string[] line = NextLine();
-            return line == null
-                ? null
-                : new Transaction(
-                    int.Parse(line[vmIndex]),
-                    line[cardIndex],
-                    line[pinIndex],
-                    int.Parse(line[doorIndex]),
-                    int.Parse(line[eventIndex]),
-                    int.Parse(line[inOutStateIndex]),
-                    ToTimestamp(long.Parse(line[timestampIndex]))
-                );
+            return line == null ? null : new Transaction(int.Parse(line[vmIndex]), line[cardIndex], line[pinIndex], int.Parse(line[doorIndex]), int.Parse(line[eventIndex]), int.Parse(line[inOutStateIndex]), ToTimestamp(long.Parse(line[timestampIndex])));
         }
     }
-
 }
