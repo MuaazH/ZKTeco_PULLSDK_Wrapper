@@ -4,8 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # SharpDevelop 5.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PullSDK", "PullSDK.csproj", "{310B11FB-5082-4719-BAAC-CAD5AB87D209}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "..\Test\Test.csproj", "{C55E9A5E-DBB3-4421-A828-2DDB80D5F378}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,9 +14,5 @@ Global
 		{310B11FB-5082-4719-BAAC-CAD5AB87D209}.Debug|Any CPU.Build.0 = Debug|x86
 		{310B11FB-5082-4719-BAAC-CAD5AB87D209}.Release|Any CPU.ActiveCfg = Release|x86
 		{310B11FB-5082-4719-BAAC-CAD5AB87D209}.Release|Any CPU.Build.0 = Release|x86
-		{C55E9A5E-DBB3-4421-A828-2DDB80D5F378}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C55E9A5E-DBB3-4421-A828-2DDB80D5F378}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C55E9A5E-DBB3-4421-A828-2DDB80D5F378}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C55E9A5E-DBB3-4421-A828-2DDB80D5F378}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

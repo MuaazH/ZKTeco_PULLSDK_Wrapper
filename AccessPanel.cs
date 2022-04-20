@@ -297,7 +297,7 @@ namespace i04PullSDK
         const string TIMEZONE_TABLE = "timezone";
         const string TRANSACTIONS_TABLE = "transaction";
 
-        const int HugeBufferSize = 203 * 1024 * 1024;
+        const int HugeBufferSize = 20 * 1024 * 1024;
         const int LargeBufferSize = 1024 * 1024 * 2;
 
         [DllImport("plcommpro.dll", EntryPoint = "Connect")]
