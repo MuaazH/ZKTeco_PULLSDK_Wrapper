@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace PullSDK_core;
@@ -44,16 +45,18 @@ public class AccessPanel
     IntPtr _handle = IntPtr.Zero;
     int _failCount;
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public int GetLastError()
     {
         return PullLastError();
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool IsConnected()
     {
         if (_handle != IntPtr.Zero)
         {
-            if (_failCount > 10)
+            if (_failCount > 5)
             {
                 _failCount = 0;
                 Disconnect();
@@ -66,6 +69,7 @@ public class AccessPanel
         return _handle != IntPtr.Zero;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public void Disconnect()
     {
         if (IsConnected())
@@ -75,6 +79,7 @@ public class AccessPanel
         }
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool Connect(string ip, int port, int key, int timeout)
     {
         if (IsConnected())
@@ -87,6 +92,7 @@ public class AccessPanel
         return _handle != IntPtr.Zero;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public Fingerprint? GetFingerprint(string pin, int finger)
     {
         if (IsConnected())
@@ -231,6 +237,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public List<User>? ReadUsers()
     {
         if (IsConnected())
@@ -261,6 +268,7 @@ public class AccessPanel
                         {
                             throw new Exception("Could not parse users");
                         }
+
                         users.Add(usr);
                     }
 
@@ -288,6 +296,7 @@ public class AccessPanel
         return null;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public Transaction[]? ReadTransactionLog(long startingTimestamp)
     {
         if (!IsConnected())
@@ -381,11 +390,13 @@ public class AccessPanel
         return x <= uint.MaxValue;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool WriteUser(User u)
     {
         return WriteUsers(new[] {u});
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUser(string pin)
     {
         if (!IsConnected())
@@ -437,6 +448,7 @@ public class AccessPanel
         return true;
     }*/
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserByCard(string card)
     {
         if (!IsConnected())
@@ -478,6 +490,7 @@ public class AccessPanel
         */
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserFingerprints(string pin)
     {
         if (!IsConnected())
@@ -494,6 +507,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserTimezones(string pin)
     {
         if (!IsConnected())
@@ -510,6 +524,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserTransactions(string pin)
     {
         if (!IsConnected())
@@ -526,6 +541,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllDataFromDevice()
     {
         if (!IsConnected())
@@ -542,6 +558,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllFingerprints()
     {
         if (!IsConnected())
@@ -558,6 +575,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllUsers()
     {
         if (!IsConnected())
@@ -574,6 +592,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllUserAuth()
     {
         if (!IsConnected())
@@ -590,6 +609,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllTimezones()
     {
         if (!IsConnected())
@@ -606,6 +626,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllTransactions()
     {
         if (!IsConnected())
@@ -622,7 +643,7 @@ public class AccessPanel
         return false;
     }
 
-
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteFingerprint(string pin, int finger)
     {
         if (!IsConnected())
@@ -644,6 +665,7 @@ public class AccessPanel
         return string.Format("TimezoneId=1\tSunTime1={6}\tSunTime2={7}\tSunTime3={8}\tMonTime1={9}\tMonTime2={10}\tMonTime3={11}\tTueTime1={12}\tTueTime2={13}\tTueTime3={14}\tWedTime1={15}\tWedTime2={16}\tWedTime3={17}\tThuTime1={18}\tThuTime2={19}\tThuTime3={20}\tFriTime1={0}\tFriTime2={1}\tFriTime3={2}\tSatTime1={3}\tSatTime2={4}\tSatTime3={5}\tHol1Time1=2359\tHol1Time2=0\tHol1Time3=0\tHol2Time1=2359\tHol2Time2=0\tHol2Time3=0\tHol3Time1=2359\tHol3Time2=0\tHol3Time3=0", conf[0], conf[1], conf[2], conf[3], conf[4], conf[5], conf[6], conf[7], conf[8], conf[9], conf[10], conf[11], conf[12], conf[13], conf[14], conf[15], conf[16], conf[17], conf[18], conf[19], conf[20]);
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool WriteTimezone(int[] tz)
     {
         byte[] defaultTimeZoneData = Encoding.ASCII.GetBytes(TimezoneString(tz));
@@ -655,6 +677,7 @@ public class AccessPanel
         return true;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     private string AuthTableData(string pin, int timezoneId, int[]? doors)
     {
         //int[] allDoors = { 0, 1, 3, 7, 15, 31, 63, 127, 255, 1023 };
@@ -678,6 +701,7 @@ public class AccessPanel
         return $"Pin={pin}\tAuthorizeTimezoneId={timezoneId}\tAuthorizeDoorId={doorsCode}";
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool WriteUsers(User[] users)
     {
         if (!IsConnected() || users.Length == 0)
@@ -748,11 +772,13 @@ public class AccessPanel
         return true;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool AddFingerprint(Fingerprint fp)
     {
-        return AddFingerprints(new [] {fp});
+        return AddFingerprints(new[] {fp});
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool AddFingerprints(Fingerprint[] fpList)
     {
         if (!IsConnected() || fpList.Length == 0)
@@ -781,6 +807,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool StopAlarm()
     {
         if (!IsConnected())
@@ -803,7 +830,9 @@ public class AccessPanel
         return false;
     }
 
+
     // first door is 1
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool OpenDoor(int doorId, int seconds)
     {
         if (!IsConnected() || seconds < 1 || seconds > 60)
@@ -827,6 +856,7 @@ public class AccessPanel
     }
 
     // first door is 1
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public bool CloseDoor(int doorId)
     {
         if (!IsConnected())
@@ -849,6 +879,7 @@ public class AccessPanel
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public int GetDoorCount()
     {
         if (!IsConnected())
@@ -877,6 +908,7 @@ public class AccessPanel
 
     string _lastEventTime = "0000-00-00 00:00:00";
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public AccessPanelEvent? GetEventLog()
     {
         if (IsConnected())
@@ -885,7 +917,7 @@ public class AccessPanel
             if (GetRTLog(_handle, ref buf[0], buf.Length) > -1)
             {
                 string tempLastEventTime = _lastEventTime;
-                string[] events = Encoding.ASCII.GetString(buf).Replace("\0", "").Trim().Split(new [] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
+                string[] events = Encoding.ASCII.GetString(buf).Replace("\0", "").Trim().Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
                 List<AccessPanelRtEvent> rtEvents = new List<AccessPanelRtEvent>();
                 AccessPanelDoorsStatus? doorsStatus = null;
                 for (int i = 0; i < events.Length; i++)
@@ -895,7 +927,7 @@ public class AccessPanel
                         continue;
                     }
 
-                    string[] values = events[i].Split(new [] {','});
+                    string[] values = events[i].Split(new[] {','});
                     if (values.Length != 7)
                     {
                         continue;
