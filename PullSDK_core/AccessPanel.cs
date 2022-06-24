@@ -781,6 +781,8 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool AddFingerprints(Fingerprint[] fpList)
     {
+        // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  !IsConnected() = {!IsConnected()}");
+        // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  fpList.Length = {fpList.Length}");
         if (!IsConnected() || fpList.Length == 0)
         {
             return false;
@@ -789,20 +791,30 @@ public class AccessPanel
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < fpList.Length; i++)
         {
+            // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  i = {i}");
+            // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  !IsPinValid(fpList[i].Pin) = {!IsPinValid(fpList[i].Pin)}");
+            // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  fpList[i].Template == null = {fpList[i].Template == null}");
+            // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  fpList[i].Template?.Length < 100 = {fpList[i].Template?.Length < 100}");
             if (!IsPinValid(fpList[i].Pin) || fpList[i].Template == null || fpList[i].Template?.Length < 100)
             {
+                // Console.WriteLine("         % pull sdk dbg % AddFingerprints()  returning false");
                 return false;
             }
 
             sb.Append(fpList[i]).Append("\r\n");
         }
 
-        byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-        if (SetDeviceData(_handle, FpTable, data, "") == 0)
+        string dataString = sb.ToString();
+        // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  dataString = {dataString}");
+        byte[] data = Encoding.ASCII.GetBytes(dataString);
+        int err = SetDeviceData(_handle, FpTable, data, "");
+        if (err == 0)
         {
+            // Console.WriteLine("         % pull sdk dbg % AddFingerprints()  returning true");
             return true;
         }
 
+        // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  GetLastError() = {GetLastError()}    err = {err}");
         _failCount++;
         return false;
     }

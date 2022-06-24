@@ -23,7 +23,7 @@ public class Fingerprint : IComparable<Fingerprint>
     public override string ToString()
     {
         int size = Template == null ? 0 : Convert.FromBase64String(Template).Length;
-        return $"Size={size}\tPin={NotNull(Pin)}\ttFingerID={FingerId}\tValid=1\tTemplate={NotNull(Template)}\tEndTag={NotNull(EndTag)}";
+        return $"Size={size}\tPin={NotNull(Pin)}\tFingerID={FingerId}\tValid=1\tTemplate={NotNull(Template)}\tEndTag={NotNull(EndTag)}";
     }
 
     #region IComparable implementation

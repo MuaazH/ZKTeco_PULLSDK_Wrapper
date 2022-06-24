@@ -7,6 +7,8 @@
         <AssemblyName>PullSDK</AssemblyName>
         <LangVersion>10</LangVersion>
         <Company>i04</Company>
+        <Configurations>Release;Debug</Configurations>
+        <Platforms>x86</Platforms>
     </PropertyGroup>
 
 </Project>
