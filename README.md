@@ -23,8 +23,8 @@ if (users ==  null) {
     return; // could not read users
 }
     
-// open door 1 for 5000 ms
-if (!ACDevice.OpenDoor(1, 5000)) {
+// open door 1 for 5 seconds
+if (!ACDevice.OpenDoor(1, 5)) {
     return; // count not open door
 }
 ```
