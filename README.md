@@ -1,5 +1,5 @@
 # ZKTeco PullSDK Wrapper
-This wrapper is only for Pull devices (inBio, C3 panels, ...etc). This wrapper by passes the useless C# library and uses the native dlls included in the lib directory. 
+This wrapper is only for Pull devices (inBio, C3 panels, ...etc). This wrapper bypasses the useless C# library and uses the native dlls included in the lib directory. 
 
 # .Net Core
 This libray is using .Net Core. You can copy the source and downgrade if you feel like it.
