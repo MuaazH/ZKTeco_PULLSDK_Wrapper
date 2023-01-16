@@ -2,7 +2,7 @@
 This wrapper is only for Pull devices (inBio, C3 panels, ...etc). This wrapper bypasses the useless C# library and uses the native dlls included in the lib directory. 
 
 # ZKFinger Wrapper
-This includes ZKFinger wrapper, again, this by passes the ZKTeco crap and uses the native dlls, in this case the dlls required and installed with the bastard usb driver.
+This includes ZKFinger wrapper, again, this by passes the ZKTeco crap and uses the native dlls, in this case the dlls required are installed with the bastard usb driver.
 
 # .Net Core
 This library is using .Net Core. You can copy the source and downgrade if you feel like it.
