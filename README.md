@@ -1,10 +1,13 @@
 # ZKTeco PullSDK Wrapper
 This wrapper is only for Pull devices (inBio, C3 panels, ...etc). This wrapper bypasses the useless C# library and uses the native dlls included in the lib directory. 
 
-# .Net Core
-This libray is using .Net Core. You can copy the source and downgrade if you feel like it.
+# ZKFinger Wrapper
+This includes ZKFinger wrapper, again, this by passes the ZKTeco crap and uses the native dlls, in this case the dlls required and installed with the bastard usb driver.
 
-# HOW TO USE
+# .Net Core
+This library is using .Net Core. You can copy the source and downgrade if you feel like it.
+
+# HOW TO USE PULL SDK
 ```C#
 using i04PullSDK;
 
@@ -26,6 +29,80 @@ if (users ==  null) {
 if (!ACDevice.OpenDoor(1, 5)) {
     return; // count not open door
 }
+```
+
+# HOW TO USE ZKFinger
+```C#
+
+// init
+if (!FingerReader.Init())
+{
+    return; // dll not found & other problems
+}
+
+// connect
+var reader = FingerReader.GetDevice();
+if (reader != null)
+    return ; // check your usb cable you clumsy fool
+}
+
+// prepare (here comes the nesting monster)
+if (reader.ReadParameters())
+{
+    // create a new holder
+    var db = new FingerprintDb();
+    if (db.Init()) {
+        int steps = 0;
+        while (steps < FingerprintDb.Steps)
+        {
+            var data = reader.AcquireFingerprint();
+            if (data == null) {
+                Thread.Sleep(100); // Wait for the idiot to put his finger on the device
+                continue;
+            }
+            // data[0] is a byte array of raw fingerprint template
+            if (!db.Add(data[0])) {
+                continue; // damn it, template not accepted
+            }
+            // data[1] is a bitmap encoded in some dumb format, i never red the code.
+            MemoryStream ms = new MemoryStream();
+            BitmapFormat.GetBitmap(img, w, h, ref ms);
+            var bmpImage = ms.ToArray();
+            
+            // do something with the image here
+            ...
+
+            // move to next step (you have to take 3 scans for one template)
+            steps++;
+            Thread.Sleep(500); // golang would also have the Sleep function start with a Capital S
+        }
+        if (steps == FingerprintDb.Steps)
+        {
+            // We have a fingerrpint template.
+            var template = db.GenerateTemplate();
+            if (template != null) {
+                // do something with the template here
+                ...
+            }
+        }
+        // free the memory
+        db.Free();
+    }
+    else
+    {
+        // crap! could not init db
+    }
+} else {
+     // uh... don't look at me
+}
+
+
+
+// clean up
+reader.Close();
+FingerReader.Release();
+
+
 ```
 
 # Message for ZKTeco
