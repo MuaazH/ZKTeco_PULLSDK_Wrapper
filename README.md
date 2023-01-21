@@ -1,3 +1,6 @@
+# ZKTeco is rubbish
+ZKTeco dev team are complete morons. Their code is slow, unstable, and full of bugs. Don't buy ZKTeco devices & software. ZKTeco is rubbish, I can prove it mathematically.
+
 # ZKTeco PullSDK Wrapper
 This wrapper is only for Pull devices (inBio, C3 panels, ...etc). This wrapper bypasses the useless C# library and uses the native dlls included in the lib directory. 
 
