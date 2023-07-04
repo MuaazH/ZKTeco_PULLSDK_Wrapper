@@ -847,8 +847,13 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool OpenDoor(int doorId, int seconds)
     {
-        if (!IsConnected() || seconds < 1 || seconds > 60)
+        if (!IsConnected())
         {
+            return false;
+        }
+
+        // 255 seconds => open the door without time?
+        if (seconds < 1 || (seconds > 60 && seconds != 255)) {
             return false;
         }
 
