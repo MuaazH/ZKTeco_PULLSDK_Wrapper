@@ -11,7 +11,7 @@ This includes ZKFinger wrapper, again, this by passes the ZKTeco crap and uses t
 This library is using .Net Core. You can copy the source and downgrade if you feel like it.
 
 # HOW TO INSTALL
-Copy the lib folder to your working directory (i.e. where your executable will rung from) and import "PullSDK.dll" in your project.
+Copy the content of the lib folder to your working directory (i.e. where your executable will run from) and import "PullSDK.dll" in your project.
 
 # HOW TO USE PULL SDK
 ```C#
