@@ -15,7 +15,7 @@ Copy the content of the lib folder to your working directory (i.e. where your ex
 
 # HOW TO USE PULL SDK
 ```C#
-using i04PullSDK;
+using PullSDK_core;
 
 
 AccessPanel ACDevice = new AccessPanel();
@@ -35,6 +35,8 @@ if (users ==  null) {
 if (!ACDevice.OpenDoor(1, 5)) {
     return; // count not open door
 }
+
+// I'm too lazy to give an example for all the functions, and I'm not getting payed to do so.
 ```
 
 # HOW TO USE ZKFinger
