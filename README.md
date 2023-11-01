@@ -21,7 +21,7 @@ using PullSDK_core;
 AccessPanel ACDevice = new AccessPanel();
 
 // connect
-if (!ACDevice.Connect("192.168.1.201", "4370", "1234", 5000)) {
+if (!ACDevice.Connect("192.168.1.201", "4370", 123456, 5000)) {
     return; // could not connect
 }
 
