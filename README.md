@@ -117,7 +117,8 @@ FingerReader.Release();
 I can make your sdk & devices faster. My rate is $300/hour, contact me: muaaz.h.is@gmail.com
 
 # License
-ISC or your driver's license.
+[ISRAEL LICENSE](https://github.com/MuaazH/ISRAEL-LICENSE)
+Your only option is to israel the software, i.e. steal it and claim its yours, the US & UK will approve. No one will stop you. 100% legal.
 
 # Support My Work
 If you found this project useful, Please pretend to be an investor and contact ZKteco to try to scam them using the pyramid scheme, as this would really help spread the good word of this repository.
