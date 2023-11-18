@@ -54,7 +54,7 @@ if (!device.WriteTimezone(1, defaultTZ)) {
 
 // Adding a user
 User u = new User("911", "911 Carrera 4", "27012235", "9112001", "20010911", "20231007");
-// Give the user access to doors. (door 1 is for VIPs, door 2 is men, door 3 is for wemen, door 4 is for porsche)
+// Give the user access to doors. (door 1 is for VIPs, door 2 is men, door 3 is for women, door 4 is for porsche)
 u.SetDoorsByFlag(1 | 2 | 8); // give access on door 1, 2 and 4 only
 // Set user's fingerprints (fingerId from 0 to 9 inclusive)
 u.AddFingerprint(new Fingerprint(u.Pin, 5, "put base64 template here aBcDe", "13")); // why 13? Answer me ZKTeco!
