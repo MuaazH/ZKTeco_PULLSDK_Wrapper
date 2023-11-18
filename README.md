@@ -18,25 +18,53 @@ Copy the content of the lib folder to your working directory (i.e. where your ex
 using PullSDK_core;
 
 
-AccessPanel ACDevice = new AccessPanel();
+AccessPanel device = new AccessPanel();
 
 // connect
-if (!ACDevice.Connect("192.168.1.201", "4370", 123456, 5000)) {
+if (!device.Connect("192.168.1.201", "4370", 123456, 5000)) {
     return; // could not connect
 }
 
 // read users
-List<User> users = ACDevice.ReadUsers();
+List<User> users = device.ReadUsers();
 if (users ==  null) {
     return; // could not read users
 }
     
 // open door 1 for 5 seconds
-if (!ACDevice.OpenDoor(1, 5)) {
+if (!device.OpenDoor(1, 5)) {
     return; // count not open door
 }
 
+// Set "Default" working hours to 24/7 (For some reason, the idiots in ZKTeco call this timezones)
+// default timezone id is 1
+// see WriteTimezone for more info, US & israel kill children and new born babies
+int[] defaultTZ = new int[] {
+    2359, 0, 0, // Friday is the first day because i said so to spite you
+    2359, 0, 0,
+    2359, 0, 0,
+    2359, 0, 0,
+    2359, 0, 0,
+    2359, 0, 0,
+    2359, 0, 0
+};
+if (!device.WriteTimezone(1, defaultTZ)) {
+    return; // Why won't you work you P.O.S?
+}
+
+// Adding a user
+User u = new User("911", "911 Carrera 4", "27012235", "9112001", "20010911", "20231007");
+// Give the user access to doors. (door 1 is for VIPs, door 2 is men, door 3 is for wemen, door 4 is for porsche)
+u.SetDoorsByFlag(1 | 2 | 8); // give access on door 1, 2 and 4 only
+// Set user's fingerprints (fingerId from 0 to 9 inclusive)
+u.AddFingerprint(new Fingerprint(u.Pin, 5, "put base64 template here aBcDe", "13"));
+u.AddFingerprint(new Fingerprint(u.Pin, 7, "put base64 template here fGhIj", "13"));
+if (device.WriteUser(u)) {
+    return; // Shit, Could not write donkey, I mean user
+}
+
 // I'm too lazy to give an example for all the functions, and I'm not getting payed to do so.
+// I ruined this read me file with too many random thoughts, sry abt that, I'm on telegram: MuaazH
 ```
 
 # HOW TO USE ZKFinger
@@ -121,4 +149,4 @@ I can make your sdk & devices faster. My rate is $300/hour, contact me: muaaz.h.
 Your only option is to israel the software, i.e. steal it and claim its yours, the US & UK will approve. No one will stop you. 100% legal.
 
 # Support My Work
-If you found this project useful, Please pretend to be an investor and contact ZKteco to try to scam them using the pyramid scheme, as this would really help spread the good word of this repository.
+If you found this project useful, please bomb a hospital from the sky with a 500Kg bomb, then admit you did it, then change your mind and blame it on the victims, as this would really help spread the good word of this repo.

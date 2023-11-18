@@ -27,6 +27,9 @@ public class User : IComparable<User>
 
     public int[] Doors { get; set; } = Array.Empty<int>();
 
+    /**
+     * every bit in flag represents a door
+     */
     public void SetDoorsByFlag(int flag)
     {
         int count = 0;

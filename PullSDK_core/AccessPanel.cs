@@ -25,7 +25,8 @@ public class AccessPanel
     private static extern int PullLastError();
 
     [DllImport("plcommpro.dll", EntryPoint = "GetDeviceData")]
-    private static extern int GetDeviceData(IntPtr handle, ref byte buffer, int len, string table, string fieldNames, string filter, string options);
+    private static extern int GetDeviceData(IntPtr handle, ref byte buffer, int len, string table, string fieldNames,
+        string filter, string options);
 
     [DllImport("plcommpro.dll", EntryPoint = "SetDeviceData")]
     private static extern int SetDeviceData(IntPtr handle, string table, byte[] data, string options);
@@ -34,7 +35,8 @@ public class AccessPanel
     private static extern int DeleteDeviceData(IntPtr handle, string table, string data, string options);
 
     [DllImport("plcommpro.dll", EntryPoint = "ControlDevice")]
-    private static extern int ControlDevice(IntPtr handle, int operation, int p1, int p2, int p3, int p4, string options);
+    private static extern int ControlDevice(IntPtr handle, int operation, int p1, int p2, int p3, int p4,
+        string options);
 
     [DllImport("plcommpro.dll", EntryPoint = "GetDeviceParam")]
     private static extern int GetDeviceParam(IntPtr handle, ref byte buffer, int len, string item);
@@ -45,12 +47,19 @@ public class AccessPanel
     IntPtr _handle = IntPtr.Zero;
     int _failCount;
 
+
+    /**
+     * returns the last error code
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public int GetLastError()
     {
         return PullLastError();
     }
 
+    /**
+     * Checks if the device is connected
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool IsConnected()
     {
@@ -69,6 +78,9 @@ public class AccessPanel
         return _handle != IntPtr.Zero;
     }
 
+    /**
+     * Disconnects from shit
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public void Disconnect()
     {
@@ -79,6 +91,9 @@ public class AccessPanel
         }
     }
 
+    /**
+     * Connects to a device using the TCP protocol
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool Connect(string ip, int port, int key, int timeout)
     {
@@ -87,18 +102,23 @@ public class AccessPanel
             return false;
         }
 
-        string connStr = $"protocol=TCP,ipaddress={ip},port={port},timeout={timeout},passwd={(key == 0 ? "" : key.ToString())}";
+        string connStr =
+            $"protocol=TCP,ipaddress={ip},port={port},timeout={timeout},passwd={(key == 0 ? "" : key.ToString())}";
         _handle = Connect(connStr);
         return _handle != IntPtr.Zero;
     }
 
+    /**
+     * Reads a fingerprint from the device
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public Fingerprint? GetFingerprint(string pin, int finger)
     {
         if (IsConnected())
         {
             byte[] buffer = new byte[LargeBufferSize];
-            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, FpTable, "Size\tPin\tFingerID\tValid\tTemplate\tEndTag", // fieldNames,
+            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, FpTable,
+                "Size\tPin\tFingerID\tValid\tTemplate\tEndTag", // fieldNames,
                 "Pin=" + pin + ",FingerID=" + finger + ",Valid=1", "");
             if (readResult >= 0)
             {
@@ -134,12 +154,16 @@ public class AccessPanel
         return null;
     }
 
+    /**
+     * Reads the doors that users are allowed to access
+     */
     bool ReadDoors(List<User> users)
     {
         if (IsConnected())
         {
             byte[] buffer = new byte[HugeBufferSize];
-            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable, "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", "", "");
+            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable,
+                "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", "AuthorizeTimezoneId=1", "");
             if (readResult >= 0)
             {
                 int len = 0;
@@ -182,6 +206,9 @@ public class AccessPanel
         return false;
     }
 
+    /**
+     * Reads the fingerprints of users (A bit costly)
+     */
     bool ReadFingerprints(List<User> users)
     {
         if (IsConnected())
@@ -237,6 +264,11 @@ public class AccessPanel
         return false;
     }
 
+    /**
+     * reads the list of users from the device
+     * Also reads fingerprints without templates
+     * Also reads what doors these users are allowed on the default timezone (AuthorizeTimezoneId=1)
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public List<User>? ReadUsers()
     {
@@ -296,6 +328,9 @@ public class AccessPanel
         return null;
     }
 
+    /**
+     * reads device log
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public Transaction[]? ReadTransactionLog(long startingTimestamp)
     {
@@ -337,13 +372,13 @@ public class AccessPanel
 
             if (t.Timestamp >= startingTimestamp)
             {
-                if (t.IsAccessDenied() || t.IsAccessGranted())
-                {
-                    if (!string.IsNullOrWhiteSpace(t.Card))
-                    {
-                        transactions.Add(t);
-                    }
-                }
+                // if (t.IsAccessDenied() || t.IsAccessGranted())
+                // {
+                // if (!string.IsNullOrWhiteSpace(t.Card))
+                // {
+                transactions.Add(t);
+                // }
+                // }
             }
         }
 
@@ -351,6 +386,9 @@ public class AccessPanel
         return transactions.ToArray();
     }
 
+    /**
+     * tests if the string "pass" is a valid password
+     */
     public static bool IsPasswordValid(string pass)
     {
         if (pass.Length == 0)
@@ -367,6 +405,9 @@ public class AccessPanel
         return true;
     }
 
+    /**
+     * Tests if the "card" string is a valid card number
+     */
     public static bool IsCardValid(string? card)
     {
         if (card == null) return false;
@@ -390,11 +431,16 @@ public class AccessPanel
         return x <= uint.MaxValue;
     }
 
+    /**
+     * writes a single user to the device
+     * See <code>WriteUsers</code>
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool WriteUser(User u)
     {
-        return WriteUsers(new[] {u});
+        return WriteUsers(new[] { u });
     }
+
 
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUser(string pin)
@@ -412,7 +458,7 @@ public class AccessPanel
         //if (!DeleteUserTimezones(pin)) {
         //return false;
         //}
-        DeleteUserTimezones(pin);
+        DeleteUserTimezones(pin); // ZKTeco is rubbish. May fail sometimes? Needs testing. I don't have a device.
         //DeleteUserTransactions(pin);
         if (0 <= DeleteDeviceData(_handle, UserTable, "Pin=" + pin, ""))
         {
@@ -448,6 +494,9 @@ public class AccessPanel
         return true;
     }*/
 
+    /**
+     * Deletes a user by card (Dangerous, ZKTeco dev's are idiots, No Foreign keys on the DB)
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserByCard(string card)
     {
@@ -463,33 +512,11 @@ public class AccessPanel
 
         _failCount++;
         return false;
-        /*
-        byte[] buffer = new byte[1024*2];
-        if (GetDeviceData(handle, ref buffer[0], buffer.Length, USER_TABLE, "*", "CardNo=" + card, "") >= 0) {
-            int len = 0;
-            while (len < buffer.Length && buffer[len] != 0) {
-                len++;
-            }
-            UsersReader reader = new UsersReader(Encoding.ASCII.GetString(buffer, 0, len));
-            buffer = null; // release memory
-            if (reader.ReadHead())
-            {
-                int count = reader.LineCount;
-                List<User> users = new List<User>(count);
-                for (int i = 0; i < count; i++)
-                {
-                    User u = reader.Next();
-                    DeleteUser(u.Pin);
-                }
-                return true;
-            }
-            return false;
-        }
-        failCount++;
-        return false;
-        */
     }
 
+    /**
+     * Delete user fingerprints
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserFingerprints(string pin)
     {
@@ -507,6 +534,9 @@ public class AccessPanel
         return false;
     }
 
+    /**
+     * removes a user's access to all doors
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserTimezones(string pin)
     {
@@ -524,23 +554,26 @@ public class AccessPanel
         return false;
     }
 
-    [MethodImpl(MethodImplOptions.Synchronized)]
-    public bool DeleteUserTransactions(string pin)
-    {
-        if (!IsConnected())
-        {
-            return false;
-        }
+    // [MethodImpl(MethodImplOptions.Synchronized)]
+    // public bool DeleteUserTransactions(string pin)
+    // {
+    //     if (!IsConnected())
+    //     {
+    //         return false;
+    //     }
+    //
+    //     if (0 <= DeleteDeviceData(_handle, TransactionsTable, "pin=" + pin, ""))
+    //     {
+    //         return true;
+    //     }
+    //
+    //     _failCount++;
+    //     return false;
+    // }
 
-        if (0 <= DeleteDeviceData(_handle, TransactionsTable, "pin=" + pin, ""))
-        {
-            return true;
-        }
-
-        _failCount++;
-        return false;
-    }
-
+    /**
+     * Cleans the device for a fresh start. (ZKTeco sucks)
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllDataFromDevice()
     {
@@ -549,7 +582,10 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, FpTable, "", "") && 0 <= DeleteDeviceData(_handle, UserTable, "", "") && 0 <= DeleteDeviceData(_handle, AuthTable, "", "") && 0 <= DeleteDeviceData(_handle, TimezoneTable, "", "") && 0 <= DeleteDeviceData(_handle, TransactionsTable, "", ""))
+        if (0 <= DeleteDeviceData(_handle, FpTable, "", "") && 0 <= DeleteDeviceData(_handle, UserTable, "", "") &&
+            0 <= DeleteDeviceData(_handle, AuthTable, "", "") &&
+            0 <= DeleteDeviceData(_handle, TimezoneTable, "", "") &&
+            0 <= DeleteDeviceData(_handle, TransactionsTable, "", ""))
         {
             return true;
         }
@@ -643,6 +679,9 @@ public class AccessPanel
         return false;
     }
 
+    /**
+     * Deletes one fingerprint
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteFingerprint(string pin, int finger)
     {
@@ -660,15 +699,44 @@ public class AccessPanel
         return false;
     }
 
-    string TimezoneString(int[] conf)
+    string TimezoneString(int id, int[] conf)
     {
-        return string.Format("TimezoneId=1\tSunTime1={6}\tSunTime2={7}\tSunTime3={8}\tMonTime1={9}\tMonTime2={10}\tMonTime3={11}\tTueTime1={12}\tTueTime2={13}\tTueTime3={14}\tWedTime1={15}\tWedTime2={16}\tWedTime3={17}\tThuTime1={18}\tThuTime2={19}\tThuTime3={20}\tFriTime1={0}\tFriTime2={1}\tFriTime3={2}\tSatTime1={3}\tSatTime2={4}\tSatTime3={5}\tHol1Time1=2359\tHol1Time2=0\tHol1Time3=0\tHol2Time1=2359\tHol2Time2=0\tHol2Time3=0\tHol3Time1=2359\tHol3Time2=0\tHol3Time3=0", conf[0], conf[1], conf[2], conf[3], conf[4], conf[5], conf[6], conf[7], conf[8], conf[9], conf[10], conf[11], conf[12], conf[13], conf[14], conf[15], conf[16], conf[17], conf[18], conf[19], conf[20]);
+        if (conf.Length != 21)
+            throw new Exception("Invalid timezone length, A Timezone must be int[3*7]");
+        return string.Format(
+            "TimezoneId={21}" +
+            "\tSunTime1={6}\tSunTime2={7}\tSunTime3={8}" +
+            "\tMonTime1={9}\tMonTime2={10}\tMonTime3={11}" +
+            "\tTueTime1={12}\tTueTime2={13}\tTueTime3={14}" +
+            "\tWedTime1={15}\tWedTime2={16}\tWedTime3={17}" +
+            "\tThuTime1={18}\tThuTime2={19}\tThuTime3={20}" +
+            "\tFriTime1={0}\tFriTime2={1}\tFriTime3={2}" +
+            "\tSatTime1={3}\tSatTime2={4}\tSatTime3={5}" +
+            "\tHol1Time1=2359\tHol1Time2=0\tHol1Time3=0" +
+            "\tHol2Time1=2359\tHol2Time2=0\tHol2Time3=0" +
+            "\tHol3Time1=2359\tHol3Time2=0\tHol3Time3=0",
+            conf[0], conf[1], conf[2],
+            conf[3], conf[4], conf[5],
+            conf[6], conf[7], conf[8],
+            conf[9], conf[10], conf[11],
+            conf[12], conf[13], conf[14],
+            conf[15], conf[16], conf[17],
+            conf[18], conf[19], conf[20],
+            id
+        );
     }
 
+    /**
+     * Writes a timezone to the device.
+     * a timezone is an int[21] every 3 ints are 3 periods in the day
+     * a period is a 32bit int, where the HIGH 16 bits are the start of the period, and the low 16 bits are the end
+     * 16bits time format is hours*100+minutes
+     * to select the entire day set the first period to <code>(0 << 16) | (2359) = 2359</code> and the 2nd & 3rd to zero
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public bool WriteTimezone(int[] tz)
+    public bool WriteTimezone(int id, int[] tz)
     {
-        byte[] defaultTimeZoneData = Encoding.ASCII.GetBytes(TimezoneString(tz));
+        byte[] defaultTimeZoneData = Encoding.ASCII.GetBytes(TimezoneString(id, tz));
         if (SetDeviceData(_handle, TimezoneTable, defaultTimeZoneData, "") != 0)
         {
             return false;
@@ -701,6 +769,10 @@ public class AccessPanel
         return $"Pin={pin}\tAuthorizeTimezoneId={timezoneId}\tAuthorizeDoorId={doorsCode}";
     }
 
+    /**
+     * Writes users to the device and gives them access to the doors in the default timezone
+     * also writes any valid fingerprints these users have
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool WriteUsers(User[] users)
     {
@@ -739,7 +811,7 @@ public class AccessPanel
             int end = Math.Min(k + 100, users.Length);
             for (int i = k; i < end; i++)
             {
-                // only using default timezone
+                // only using default timezone (timezoneId = 1)
                 sb.Append(AuthTableData(users[i].Pin, 1, users[i].Doors)).Append("\r\n");
             }
 
@@ -751,7 +823,8 @@ public class AccessPanel
             }
         }
 
-        Fingerprint[] fingerprints = users.SelectMany(u => u.Fingerprints.Where(f => f.Template is {Length: > 100})).ToArray();
+        Fingerprint[] fingerprints =
+            users.SelectMany(u => u.Fingerprints.Where(f => f.Template is { Length: > 100 })).ToArray();
         for (int k = 0; k < fingerprints.Length; k += 20)
         {
             StringBuilder sb = new StringBuilder();
@@ -775,7 +848,7 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool AddFingerprint(Fingerprint fp)
     {
-        return AddFingerprints(new[] {fp});
+        return AddFingerprints(new[] { fp });
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]
@@ -853,7 +926,8 @@ public class AccessPanel
         }
 
         // 255 seconds => open the door without time?
-        if (seconds < 1 || (seconds > 60 && seconds != 255)) {
+        if (seconds < 1 || (seconds > 60 && seconds != 255))
+        {
             return false;
         }
 
@@ -925,6 +999,9 @@ public class AccessPanel
 
     string _lastEventTime = "0000-00-00 00:00:00";
 
+    /**
+     * Reads the latest events only
+     */
     [MethodImpl(MethodImplOptions.Synchronized)]
     public AccessPanelEvent? GetEventLog()
     {
@@ -934,7 +1011,8 @@ public class AccessPanel
             if (GetRTLog(_handle, ref buf[0], buf.Length) > -1)
             {
                 string tempLastEventTime = _lastEventTime;
-                string[] events = Encoding.ASCII.GetString(buf).Replace("\0", "").Trim().Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
+                string[] events = Encoding.ASCII.GetString(buf).Replace("\0", "").Trim()
+                    .Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                 List<AccessPanelRtEvent> rtEvents = new List<AccessPanelRtEvent>();
                 AccessPanelDoorsStatus? doorsStatus = null;
                 for (int i = 0; i < events.Length; i++)
@@ -944,7 +1022,7 @@ public class AccessPanel
                         continue;
                     }
 
-                    string[] values = events[i].Split(new[] {','});
+                    string[] values = events[i].Split(new[] { ',' });
                     if (values.Length != 7)
                     {
                         continue;
@@ -967,7 +1045,8 @@ public class AccessPanel
                             continue;
                         }
 
-                        AccessPanelRtEvent evt = new AccessPanelRtEvent(values[0], values[1], values[3], int.Parse(values[4]), int.Parse(values[5]));
+                        AccessPanelRtEvent evt = new AccessPanelRtEvent(values[0], values[1], values[3],
+                            int.Parse(values[4]), int.Parse(values[5]));
                         rtEvents.Add(evt);
                     }
                 }
