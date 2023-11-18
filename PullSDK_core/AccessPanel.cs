@@ -846,13 +846,13 @@ public class AccessPanel
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public bool AddFingerprint(Fingerprint fp)
+    public bool WriteFingerprint(Fingerprint fp)
     {
-        return AddFingerprints(new[] { fp });
+        return WriteFingerprints(new[] { fp });
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public bool AddFingerprints(Fingerprint[] fpList)
+    public bool WriteFingerprints(Fingerprint[] fpList)
     {
         // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  !IsConnected() = {!IsConnected()}");
         // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  fpList.Length = {fpList.Length}");

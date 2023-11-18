@@ -57,10 +57,16 @@ User u = new User("911", "911 Carrera 4", "27012235", "9112001", "20010911", "20
 // Give the user access to doors. (door 1 is for VIPs, door 2 is men, door 3 is for wemen, door 4 is for porsche)
 u.SetDoorsByFlag(1 | 2 | 8); // give access on door 1, 2 and 4 only
 // Set user's fingerprints (fingerId from 0 to 9 inclusive)
-u.AddFingerprint(new Fingerprint(u.Pin, 5, "put base64 template here aBcDe", "13"));
+u.AddFingerprint(new Fingerprint(u.Pin, 5, "put base64 template here aBcDe", "13")); // why 13? Answer me ZKTeco!
 u.AddFingerprint(new Fingerprint(u.Pin, 7, "put base64 template here fGhIj", "13"));
 if (device.WriteUser(u)) {
     return; // Shit, Could not write donkey, I mean user
+}
+
+// Adding a fingerprint to and existing user
+Fingerprint f = new Fingerprint(u.Pin, 2, "put base64 template here", "13");
+if (!device.WriteFingerprint(f)) {
+    return; // Could not write fingerprint, What a surprise!
 }
 
 // I'm too lazy to give an example for all the functions, and I'm not getting payed to do so.
