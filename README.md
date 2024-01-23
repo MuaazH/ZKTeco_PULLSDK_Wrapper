@@ -8,7 +8,7 @@ This wrapper is only for Pull devices (inBio, C3 panels, ...etc). This wrapper b
 This includes ZKFinger wrapper, again, this by passes the ZKTeco crap and uses the native dlls, in this case the dlls required are installed with the bastard usb driver.
 
 # .Net Core
-This library is using .Net Core. You can copy the source and downgrade if you feel like it.
+This library is using .Net Core 8. You can copy the source and downgrade if you feel like it.
 
 # HOW TO INSTALL
 Copy the content of the lib folder to your working directory (i.e. where your executable will run from) and import "PullSDK.dll" in your project.
@@ -70,7 +70,7 @@ if (!device.WriteFingerprint(f)) {
 }
 
 // I'm too lazy to give an example for all the functions, and I'm not getting payed to do so.
-// I ruined this read me file with too many random thoughts, sry abt that, I'm on telegram: MuaazH
+
 ```
 
 # HOW TO USE ZKFinger
