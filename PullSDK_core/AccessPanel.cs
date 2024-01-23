@@ -155,15 +155,58 @@ public class AccessPanel
     }
 
     /**
-     * Reads the doors that users are allowed to access
-     */
-    bool ReadDoors(List<User> users)
+     * Reads the doors that a user is allowed to access
+     * returns null of failure
+    */
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public int ReadDoors(string pin, int timezone)
     {
         if (IsConnected())
         {
             byte[] buffer = new byte[HugeBufferSize];
             int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable,
-                "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", "AuthorizeTimezoneId=1", "");
+                "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", $"AuthorizeTimezoneId={timezone},Pin={pin}", "");
+            if (readResult >= 0)
+            {
+                int len = 0;
+                while (len < buffer.Length && buffer[len] != 0)
+                {
+                    len++;
+                }
+
+                UserAuthReader reader = new UserAuthReader(Encoding.ASCII.GetString(buffer, 0, len));
+                if (reader.ReadHead())
+                {
+                    UserAuthorization? a = reader.Next();
+                    if (a == null)
+                    {
+                        throw new Exception("Could not parse auth data");
+                    }
+
+                    return a.Doors;
+                }
+            }
+            else
+            {
+                _failCount++;
+                return -1;
+            }
+        }
+
+        return -1;
+    }
+
+
+    /**
+     * Reads the doors that users are allowed to access
+     */
+    bool ReadDoors(List<User> users, int timezone)
+    {
+        if (IsConnected())
+        {
+            byte[] buffer = new byte[HugeBufferSize];
+            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable,
+                "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", $"AuthorizeTimezoneId={timezone}", "");
             if (readResult >= 0)
             {
                 int len = 0;
@@ -310,7 +353,7 @@ public class AccessPanel
                         return null;
                     }
 
-                    if (!ReadDoors(users))
+                    if (!ReadDoors(users, 1))
                     {
                         return null;
                     }
@@ -467,6 +510,25 @@ public class AccessPanel
 
         _failCount++;
         return false;
+    }
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public bool SetUserDoors(string pin, int timezone, int[] doors)
+    {
+        if (0 > DeleteDeviceData(_handle, AuthTable, $"Pin={pin}", ""))
+        {
+            _failCount++;
+            return false;
+        }
+
+        byte[] data = Encoding.ASCII.GetBytes(AuthTableData(pin, 1, doors));
+        if (SetDeviceData(_handle, AuthTable, data, "") != 0)
+        {
+            _failCount++;
+            return false;
+        }
+
+        return true;
     }
 
     /*public bool DeleteAllTransactions()
