@@ -5,16 +5,22 @@ public class AccessPanelRtEvent
     public readonly string Time;
     public readonly string Pin;
     public readonly string Door;
+    public readonly int Card;
     public readonly int EventType;
     public readonly int InOrOut;
 
     public AccessPanelRtEvent(string time, string pin, string door, int eventType, int inOrOut)
     {
-        this.Time = time;
-        this.Pin = pin;
-        this.Door = door;
-        this.EventType = eventType;
-        this.InOrOut = inOrOut;
+        Time = time;
+        Pin = pin;
+        Door = door;
+        EventType = eventType;
+        InOrOut = inOrOut;
+    }
+    
+    public AccessPanelRtEvent(string time, string pin, int card, string door, int eventType, int inOrOut): this(time, pin, door, eventType, inOrOut)
+    {
+        Card = card;
     }
 
     public int GetDoorId()

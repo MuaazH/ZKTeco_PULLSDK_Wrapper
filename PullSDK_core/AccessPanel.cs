@@ -1107,7 +1107,9 @@ public class AccessPanel
                             continue;
                         }
 
-                        AccessPanelRtEvent evt = new AccessPanelRtEvent(values[0], values[1], values[3],
+                        int.TryParse(values[2], out var card);
+                        
+                        AccessPanelRtEvent evt = new AccessPanelRtEvent(values[0], values[1], card, values[3],
                             int.Parse(values[4]), int.Parse(values[5]));
                         rtEvents.Add(evt);
                     }
