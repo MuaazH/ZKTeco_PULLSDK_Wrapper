@@ -1040,7 +1040,7 @@ public class AccessPanel
             return -1;
         }
 
-        byte[] buffer = new byte[2048];
+        byte[] buffer = new byte[128];
         if (-1 < GetDeviceParam(_handle, ref buffer[0], buffer.Length, "LockCount"))
         {
             string str = Encoding.ASCII.GetString(buffer).Trim().Replace("LockCount=", "");
@@ -1057,6 +1057,25 @@ public class AccessPanel
         }
 
         return -1;
+    }
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public string? GetSerialNumber()
+    {
+        if (!IsConnected())
+        {
+            return null;
+        }
+
+        string opt = "~SerialNumber";
+        
+        byte[] buffer = new byte[128];
+        if (-1 < GetDeviceParam(_handle, ref buffer[0], buffer.Length, opt))
+        {
+            return Encoding.ASCII.GetString(buffer).Trim().Replace($"{opt}=", "");
+        }
+
+        return null;
     }
 
     string _lastEventTime = "0000-00-00 00:00:00";
