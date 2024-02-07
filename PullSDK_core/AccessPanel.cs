@@ -1072,7 +1072,10 @@ public class AccessPanel
         byte[] buffer = new byte[128];
         if (-1 < GetDeviceParam(_handle, ref buffer[0], buffer.Length, opt))
         {
-            return Encoding.ASCII.GetString(buffer).Trim().Replace($"{opt}=", "");
+            return new string(Encoding.ASCII.GetString(buffer).Trim().Replace($"{opt}=", "")
+                .ToCharArray()
+                .Where(c => ' ' < c && c < 127)
+                .ToArray());
         }
 
         return null;
