@@ -2,6 +2,27 @@
 
 public class Transaction : IComparable<Transaction>
 {
+
+    public string VerificationMethodName
+    {
+        get
+        {
+            // 1:Only finger
+            // 3: Only password
+            // 4: Only card
+            // 11: Card and password
+            // 200: Other
+            switch (VerificationMethod)
+            {
+                case 1: return "Finger";
+                case 3: return "Password";
+                case 4: return "Card";
+                case 11: return "Card+Password";
+                case 200: return "Other";
+                default: return "Unknown";
+            }
+        }
+    }
     public int VerificationMethod { get; set; }
     public string Card { get; set; }
     public string Pin { get; set; }
