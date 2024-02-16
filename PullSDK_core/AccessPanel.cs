@@ -41,6 +41,9 @@ public class AccessPanel
     [DllImport("plcommpro.dll", EntryPoint = "GetDeviceParam")]
     private static extern int GetDeviceParam(IntPtr handle, ref byte buffer, int len, string item);
 
+    [DllImport("plcommpro.dll", EntryPoint = "SetDeviceParam")]
+    private static extern int SetDeviceParam(IntPtr handle, string item);
+
     [DllImport("plcommpro.dll", EntryPoint = "GetRTLog")]
     private static extern int GetRTLog(IntPtr handle, ref byte buffer, int len);
 
@@ -1068,7 +1071,7 @@ public class AccessPanel
         }
 
         string opt = "~SerialNumber";
-        
+
         byte[] buffer = new byte[128];
         if (-1 < GetDeviceParam(_handle, ref buffer[0], buffer.Length, opt))
         {
@@ -1081,7 +1084,22 @@ public class AccessPanel
         return null;
     }
 
-    string _lastEventTime = "0000-00-00 00:00:00";
+    public bool SetDeviceTime(DateTime time)
+    {
+        if (!IsConnected())
+            return false;
+        long val =
+            ((time.Year - 2000) * 12 * 31 +
+             (time.Month - 1) * 31 + (time.Day - 1)) * (24 * 60 * 60) +
+            time.Hour * 60 * 60 + time.Minute * 60 + time.Second;
+        int err = SetDeviceParam(_handle, $"DateTime={val}");
+        if (err == 0)
+            return true;
+        _failCount++;
+        return false;
+    }
+
+    // string _lastEventTime = "0000-00-00 00:00:00";
 
     /**
      * Reads the latest events only
@@ -1094,7 +1112,7 @@ public class AccessPanel
             byte[] buf = new byte[LargeBufferSize];
             if (GetRTLog(_handle, ref buf[0], buf.Length) > -1)
             {
-                string tempLastEventTime = _lastEventTime;
+                // string tempLastEventTime = _lastEventTime;
                 string[] events = Encoding.ASCII.GetString(buf).Replace("\0", "").Trim()
                     .Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                 List<AccessPanelRtEvent> rtEvents = new List<AccessPanelRtEvent>();
@@ -1112,32 +1130,32 @@ public class AccessPanel
                         continue;
                     }
 
-                    if (String.Compare(values[0], tempLastEventTime, StringComparison.Ordinal) > 0)
-                    {
-                        tempLastEventTime = values[0];
-                    }
+                    // if (String.Compare(values[0], tempLastEventTime, StringComparison.Ordinal) > 0)
+                    // {
+                    //     tempLastEventTime = values[0];
+                    // }
 
-                    _lastEventTime = values[0];
+                    // _lastEventTime = values[0];
                     if (values[4].Equals("255"))
                     {
                         doorsStatus = new AccessPanelDoorsStatus(values[1], values[2]);
                     }
                     else
                     {
-                        if (String.Compare(values[0], _lastEventTime, StringComparison.Ordinal) < 0)
-                        {
-                            continue;
-                        }
+                        // if (String.Compare(values[0], _lastEventTime, StringComparison.Ordinal) < 0)
+                        // {
+                        //     continue;
+                        // }
 
                         int.TryParse(values[2], out var card);
-                        
+
                         AccessPanelRtEvent evt = new AccessPanelRtEvent(values[0], values[1], card, values[3],
                             int.Parse(values[4]), int.Parse(values[5]));
                         rtEvents.Add(evt);
                     }
                 }
 
-                _lastEventTime = tempLastEventTime;
+                // _lastEventTime = tempLastEventTime;
                 return new AccessPanelEvent(doorsStatus, rtEvents.ToArray());
             }
             else
