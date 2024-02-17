@@ -64,7 +64,7 @@ public class TransactionReader : CsvReader<Transaction>
         return (long) (t - T0).TotalSeconds;
     }
 
-    long ToTimestamp(long timeCoded)
+    DateTime ToDateTime(long timeCoded)
     {
         try
         {
@@ -80,11 +80,11 @@ public class TransactionReader : CsvReader<Transaction>
             int month = 1 + (int) (t % 12);
             t /= 12;
             int year = (int) t + 2000;
-            return ToEpoch(new DateTime(year, month, day, hour, minute, second));
+            return new DateTime(year, month, day, hour, minute, second);
         }
         catch
         {
-            return 0;
+            return DateTime.MinValue;
             // throw new Exception("Invalid timestamp " + timeCoded);
         }
     }
@@ -92,6 +92,6 @@ public class TransactionReader : CsvReader<Transaction>
     public override Transaction? Next()
     {
         string[]? line = NextLine();
-        return line == null ? null : new Transaction(int.Parse(line[VmIndex]), line[CardIndex], line[PinIndex], int.Parse(line[DoorIndex]), int.Parse(line[EventIndex]), int.Parse(line[InOutStateIndex]), ToTimestamp(long.Parse(line[TimestampIndex])));
+        return line == null ? null : new Transaction(int.Parse(line[VmIndex]), line[CardIndex], line[PinIndex], int.Parse(line[DoorIndex]), int.Parse(line[EventIndex]), int.Parse(line[InOutStateIndex]), ToDateTime(long.Parse(line[TimestampIndex])));
     }
 }

@@ -29,7 +29,7 @@ public class Transaction : IComparable<Transaction>
     public int Door { get; set; }
     public int Event { get; set; }
     public int InOutState { get; set; }
-    public long Timestamp { get; set; }
+    public DateTime Timestamp { get; set; }
 
     public static readonly int DeviceBootEvent = 206;
 
@@ -61,7 +61,7 @@ public class Transaction : IComparable<Transaction>
         34 // "Unregistered Fingerprint"
     };
 
-    public Transaction(int verificationMethod, string card, string pin, int door, int eventType, int inOutState, long timestamp)
+    public Transaction(int verificationMethod, string card, string pin, int door, int eventType, int inOutState, DateTime timestamp)
     {
         VerificationMethod = verificationMethod;
         Card = card;

@@ -378,7 +378,7 @@ public class AccessPanel
      * reads device log
      */
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public Transaction[]? ReadTransactionLog(long startingTimestamp)
+    public Transaction[]? ReadTransactionLog(DateTime start)
     {
         if (!IsConnected())
         {
@@ -416,7 +416,7 @@ public class AccessPanel
                 continue;
             }
 
-            if (t.Timestamp >= startingTimestamp)
+            if (t.Timestamp.CompareTo(start) >= 0)
             {
                 // if (t.IsAccessDenied() || t.IsAccessGranted())
                 // {
@@ -1093,6 +1093,17 @@ public class AccessPanel
              (time.Month - 1) * 31 + (time.Day - 1)) * (24 * 60 * 60) +
             time.Hour * 60 * 60 + time.Minute * 60 + time.Second;
         int err = SetDeviceParam(_handle, $"DateTime={val}");
+        if (err == 0)
+            return true;
+        _failCount++;
+        return false;
+    }
+
+    public bool Reboot()
+    {
+        if (!IsConnected())
+            return false;
+        int err = SetDeviceParam(_handle, "Reboot=1");
         if (err == 0)
             return true;
         _failCount++;

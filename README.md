@@ -148,7 +148,7 @@ FingerReader.Release();
 ```
 
 # Message for ZKTeco
-I can make your sdk & devices faster. My rate is $300/hour, contact me: muaaz.h.is@gmail.com
+I can make your sdk & devices faster. My rate is $1200/hour, contact me: muaaz.h.is@gmail.com
 
 # License
 [ISRAEL LICENSE](https://github.com/MuaazH/ISRAEL-LICENSE)
