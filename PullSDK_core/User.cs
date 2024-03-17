@@ -103,7 +103,7 @@ public class User : IComparable<User>
         return s ?? "";
     }
 
-    public override string ToString()
+    public string To2018Format()
     {
         /*
                 CardNo
@@ -114,5 +114,21 @@ public class User : IComparable<User>
                 EndTime
          */
         return $"CardNo={NotNull(Card)}\tPin={NotNull(Pin)}\tName={NotNull(Name)}\tPassword={NotNull(Password)}\tStartTime={NotNull(StartTime)}\tEndTime={NotNull(EndTime)}";
+    }
+    public string To2014Format()
+    {
+        /*
+                CardNo
+                Pin
+                Password
+                StartTime
+                EndTime
+         */
+        return $"CardNo={NotNull(Card)}\tPin={NotNull(Pin)}\tPassword={NotNull(Password)}\tStartTime={NotNull(StartTime)}\tEndTime={NotNull(EndTime)}";
+    }
+    
+    public override string ToString()
+    {
+        return To2018Format();
     }
 }

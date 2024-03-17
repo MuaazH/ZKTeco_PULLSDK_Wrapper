@@ -6,7 +6,8 @@ namespace PullSDK_core;
 
 public class AccessPanel
 {
-    private const string FpTable = "templatev10";
+    private const string FpTable10 = "templatev10";
+    private const string FpTable9 = "templatev9";
     private const string UserTable = "user";
     private const string AuthTable = "userauthorize";
     private const string TimezoneTable = "timezone";
@@ -49,6 +50,17 @@ public class AccessPanel
 
     IntPtr _handle = IntPtr.Zero;
     int _failCount;
+    private int _lastDataError;
+    private string _lastDataTable = "";
+
+    private const int Version2018 = 2018;
+    private const int Version2014 = 2014;
+
+    /**
+     * 2018 has name in user table, 2014 does not
+     * 2018 users FpTable10, 2014 uses FpTable9
+     */
+    public int DetectedFirmwareVersion { private set; get; } = 0;
 
 
     /**
@@ -58,6 +70,21 @@ public class AccessPanel
     public int GetLastError()
     {
         return PullLastError();
+    }
+
+    /**
+     * returns the last error code
+     */
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public int GetLastDataError()
+    {
+        return _lastDataError;
+    }
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    public string GetLastDataErrorTable()
+    {
+        return _lastDataTable;
     }
 
     /**
@@ -94,6 +121,16 @@ public class AccessPanel
         }
     }
 
+    // FIXME: Find a better way to detect version, docs are shit
+    private void DetectVersion()
+    {
+        DetectedFirmwareVersion = Version2014; // set to lowest possible
+        byte[] buffer = new byte[LargeBufferSize];
+        _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, FpTable10, "FingerID", "", "");
+        if (_lastDataError >= 0)
+            DetectedFirmwareVersion = Version2018;
+    }
+
     /**
      * Connects to a device using the TCP protocol
      */
@@ -108,7 +145,13 @@ public class AccessPanel
         string connStr =
             $"protocol=TCP,ipaddress={ip},port={port},timeout={timeout},passwd={(key == 0 ? "" : key.ToString())}";
         _handle = Connect(connStr);
-        return _handle != IntPtr.Zero;
+        if (_handle != IntPtr.Zero)
+        {
+            DetectVersion();
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -120,10 +163,11 @@ public class AccessPanel
         if (IsConnected())
         {
             byte[] buffer = new byte[LargeBufferSize];
-            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, FpTable,
+            _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
+            _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, _lastDataTable,
                 "Size\tPin\tFingerID\tValid\tTemplate\tEndTag", // fieldNames,
                 "Pin=" + pin + ",FingerID=" + finger + ",Valid=1", "");
-            if (readResult >= 0)
+            if (_lastDataError >= 0)
             {
                 int len = 0;
                 while (len < buffer.Length && buffer[len] != 0)
@@ -167,9 +211,10 @@ public class AccessPanel
         if (IsConnected())
         {
             byte[] buffer = new byte[HugeBufferSize];
-            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable,
+            _lastDataTable = AuthTable;
+            _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable,
                 "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", $"AuthorizeTimezoneId={timezone},Pin={pin}", "");
-            if (readResult >= 0)
+            if (_lastDataError >= 0)
             {
                 int len = 0;
                 while (len < buffer.Length && buffer[len] != 0)
@@ -208,9 +253,10 @@ public class AccessPanel
         if (IsConnected())
         {
             byte[] buffer = new byte[HugeBufferSize];
-            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable,
+            _lastDataTable = AuthTable;
+            _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, AuthTable,
                 "Pin\tAuthorizeTimezoneId\tAuthorizeDoorId", $"AuthorizeTimezoneId={timezone}", "");
-            if (readResult >= 0)
+            if (_lastDataError >= 0)
             {
                 int len = 0;
                 while (len < buffer.Length && buffer[len] != 0)
@@ -260,11 +306,12 @@ public class AccessPanel
         if (IsConnected())
         {
             byte[] buffer = new byte[HugeBufferSize];
-            int readResult = GetDeviceData(_handle, ref buffer[0], buffer.Length, FpTable,
+            _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
+            _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, _lastDataTable,
                 //"Size\tPin\tFingerID\tValid\tTemplate\tEndTag",        // fieldNames,
                 "Size\tPin\tFingerID\tValid\tEndTag", // fieldNames,
                 "Valid=1", "");
-            if (readResult >= 0)
+            if (_lastDataError >= 0)
             {
                 int len = 0;
                 while (len < buffer.Length && buffer[len] != 0)
@@ -321,7 +368,9 @@ public class AccessPanel
         if (IsConnected())
         {
             byte[] buffer = new byte[HugeBufferSize];
-            if (GetDeviceData(_handle, ref buffer[0], buffer.Length, UserTable, "*", "", "") >= 0)
+            _lastDataTable = UserTable;
+            _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, UserTable, "*", "", "");
+            if (_lastDataError >= 0)
             {
                 int len = 0;
                 while (len < buffer.Length && buffer[len] != 0)
@@ -386,7 +435,9 @@ public class AccessPanel
         }
 
         byte[] buffer = new byte[HugeBufferSize];
-        if (GetDeviceData(_handle, ref buffer[0], buffer.Length, TransactionsTable, "*", "", "") < 0)
+        _lastDataTable = TransactionsTable;
+        _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, TransactionsTable, "*", "", "");
+        if (_lastDataError < 0)
         {
             _failCount++;
             return null;
@@ -525,7 +576,9 @@ public class AccessPanel
         }
 
         byte[] data = Encoding.ASCII.GetBytes(AuthTableData(pin, 1, doors));
-        if (SetDeviceData(_handle, AuthTable, data, "") != 0)
+        _lastDataTable = AuthTable;
+        _lastDataError = SetDeviceData(_handle, AuthTable, data, "");
+        if (_lastDataError != 0)
         {
             _failCount++;
             return false;
@@ -590,7 +643,8 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, FpTable, "Pin=" + pin, ""))
+        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9, "Pin=" + pin,
+                ""))
         {
             return true;
         }
@@ -647,7 +701,8 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, FpTable, "", "") && 0 <= DeleteDeviceData(_handle, UserTable, "", "") &&
+        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9, "", "") &&
+            0 <= DeleteDeviceData(_handle, UserTable, "", "") &&
             0 <= DeleteDeviceData(_handle, AuthTable, "", "") &&
             0 <= DeleteDeviceData(_handle, TimezoneTable, "", "") &&
             0 <= DeleteDeviceData(_handle, TransactionsTable, "", ""))
@@ -667,7 +722,7 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, FpTable, "", ""))
+        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9, "", ""))
         {
             return true;
         }
@@ -755,7 +810,8 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, FpTable, "Pin=" + pin + ",FingerID=" + finger, ""))
+        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9,
+                "Pin=" + pin + ",FingerID=" + finger, ""))
         {
             return true;
         }
@@ -802,7 +858,9 @@ public class AccessPanel
     public bool WriteTimezone(int id, int[] tz)
     {
         byte[] defaultTimeZoneData = Encoding.ASCII.GetBytes(TimezoneString(id, tz));
-        if (SetDeviceData(_handle, TimezoneTable, defaultTimeZoneData, "") != 0)
+        _lastDataTable = TimezoneTable;
+        _lastDataError = SetDeviceData(_handle, TimezoneTable, defaultTimeZoneData, "");
+        if (_lastDataError != 0)
         {
             return false;
         }
@@ -859,11 +917,14 @@ public class AccessPanel
             int end = Math.Min(k + 100, users.Length);
             for (int i = k; i < end; i++)
             {
-                sb.Append(users[i]).Append("\r\n");
+                sb.Append(DetectedFirmwareVersion == Version2018 ? users[i].To2018Format() : users[i].To2014Format())
+                    .Append("\r\n");
             }
 
             byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-            if (SetDeviceData(_handle, UserTable, data, "") != 0)
+            _lastDataTable = UserTable;
+            _lastDataError = SetDeviceData(_handle, UserTable, data, "");
+            if (_lastDataError != 0)
             {
                 _failCount++;
                 return false;
@@ -881,7 +942,9 @@ public class AccessPanel
             }
 
             byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-            if (SetDeviceData(_handle, AuthTable, data, "") != 0)
+            _lastDataTable = AuthTable;
+            _lastDataError = SetDeviceData(_handle, AuthTable, data, "");
+            if (_lastDataError != 0)
             {
                 _failCount++;
                 return false;
@@ -900,7 +963,9 @@ public class AccessPanel
             }
 
             byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-            if (SetDeviceData(_handle, FpTable, data, "") != 0)
+            _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
+            _lastDataError = SetDeviceData(_handle, _lastDataTable, data, "");
+            if (_lastDataError != 0)
             {
                 _failCount++;
                 return false;
@@ -945,8 +1010,9 @@ public class AccessPanel
         string dataString = sb.ToString();
         // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  dataString = {dataString}");
         byte[] data = Encoding.ASCII.GetBytes(dataString);
-        int err = SetDeviceData(_handle, FpTable, data, "");
-        if (err == 0)
+        _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
+        _lastDataError = SetDeviceData(_handle, _lastDataTable, data, "");
+        if (_lastDataError == 0)
         {
             // Console.WriteLine("         % pull sdk dbg % AddFingerprints()  returning true");
             return true;

@@ -26,6 +26,7 @@ public class UsersReader : CsvReader<User>
         {
             switch (head[i])
             {
+                // CardNo,Pin,Password,Group,StartTime,EndTime,SuperAuthorize
                 case "CardNo":
                     _cardIndex = i;
                     break;
@@ -33,7 +34,7 @@ public class UsersReader : CsvReader<User>
                     _pinIndex = i;
                     break;
                 case "Name":
-                    _nameIndex = i;
+                    _nameIndex = i; // old devices don't have this
                     break;
                 case "Password":
                     _passIndex = i;
@@ -47,12 +48,22 @@ public class UsersReader : CsvReader<User>
             }
         }
 
-        return _cardIndex > -1 && _nameIndex > -1 && _startDateIndex > -1 && _endDateIndex > -1 && _passIndex > -1 && _pinIndex > -1;
+        if (_cardIndex > -1 && _startDateIndex > -1 && _endDateIndex > -1 && _passIndex > -1 && _pinIndex > -1)
+        {
+            return true;
+        }
+
+        // Console.WriteLine("Bad header: " + string.Join(";", head));
+        return false;
     }
 
     public override User? Next()
     {
         string[]? line = NextLine();
-        return line == null ? null : new User(line[_pinIndex], line[_nameIndex], line[_cardIndex], line[_passIndex], line[_startDateIndex], line[_endDateIndex]);
+        return line == null
+            ? null
+            : new User(line[_pinIndex], _nameIndex > -1 ? line[_nameIndex] : "", line[_cardIndex], line[_passIndex],
+                line[_startDateIndex],
+                line[_endDateIndex]);
     }
 }
