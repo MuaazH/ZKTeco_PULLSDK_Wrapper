@@ -7,7 +7,9 @@ namespace PullSDK_core;
 public class AccessPanel
 {
     private const string FpTable10 = "templatev10";
-    private const string FpTable9 = "templatev9";
+
+    // private const string FpTable9 = "templatev9";
+    // private const string FpTable8 = "templatev8";
     private const string UserTable = "user";
     private const string AuthTable = "userauthorize";
     private const string TimezoneTable = "timezone";
@@ -58,7 +60,7 @@ public class AccessPanel
 
     /**
      * 2018 has name in user table, 2014 does not
-     * 2018 users FpTable10, 2014 uses FpTable9
+     * 2018 users FpTable10, 2014 does not support fingerprints?
      */
     public int DetectedFirmwareVersion { private set; get; } = 0;
 
@@ -163,7 +165,7 @@ public class AccessPanel
         if (IsConnected())
         {
             byte[] buffer = new byte[LargeBufferSize];
-            _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
+            _lastDataTable = FpTable10;
             _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, _lastDataTable,
                 "Size\tPin\tFingerID\tValid\tTemplate\tEndTag", // fieldNames,
                 "Pin=" + pin + ",FingerID=" + finger + ",Valid=1", "");
@@ -303,10 +305,12 @@ public class AccessPanel
      */
     bool ReadFingerprints(List<User> users)
     {
+        if (DetectedFirmwareVersion == Version2014)
+            return true; // not supported, skip
         if (IsConnected())
         {
             byte[] buffer = new byte[HugeBufferSize];
-            _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
+            _lastDataTable = FpTable10;
             _lastDataError = GetDeviceData(_handle, ref buffer[0], buffer.Length, _lastDataTable,
                 //"Size\tPin\tFingerID\tValid\tTemplate\tEndTag",        // fieldNames,
                 "Size\tPin\tFingerID\tValid\tEndTag", // fieldNames,
@@ -557,7 +561,10 @@ public class AccessPanel
         //}
         DeleteUserTimezones(pin); // ZKTeco is rubbish. May fail sometimes? Needs testing. I don't have a device.
         //DeleteUserTransactions(pin);
-        if (0 <= DeleteDeviceData(_handle, UserTable, "Pin=" + pin, ""))
+
+        _lastDataTable = UserTable;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "Pin=" + pin, "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -569,7 +576,9 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool SetUserDoors(string pin, int timezone, int[] doors)
     {
-        if (0 > DeleteDeviceData(_handle, AuthTable, $"Pin={pin}", ""))
+        _lastDataTable = AuthTable;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, $"Pin={pin}", "");
+        if (0 > _lastDataError)
         {
             _failCount++;
             return false;
@@ -623,7 +632,9 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, UserTable, "CardNo=" + card, ""))
+        _lastDataTable = UserTable;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "CardNo=" + card, "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -638,13 +649,17 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteUserFingerprints(string pin)
     {
+        if (DetectedFirmwareVersion == Version2014)
+            return true; // Not supported, skip
+
         if (!IsConnected())
         {
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9, "Pin=" + pin,
-                ""))
+        _lastDataTable = FpTable10;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "Pin=" + pin, "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -664,7 +679,9 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, AuthTable, "Pin=" + pin, ""))
+        _lastDataTable = AuthTable;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "Pin=" + pin, "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -701,8 +718,13 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9, "", "") &&
-            0 <= DeleteDeviceData(_handle, UserTable, "", "") &&
+        if (DetectedFirmwareVersion == Version2018)
+        {
+            if (0 > DeleteDeviceData(_handle, FpTable10, "", ""))
+                return false;
+        }
+
+        if (0 <= DeleteDeviceData(_handle, UserTable, "", "") &&
             0 <= DeleteDeviceData(_handle, AuthTable, "", "") &&
             0 <= DeleteDeviceData(_handle, TimezoneTable, "", "") &&
             0 <= DeleteDeviceData(_handle, TransactionsTable, "", ""))
@@ -717,12 +739,17 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteAllFingerprints()
     {
+        if (DetectedFirmwareVersion == Version2014)
+            return true; // Skip, Not supported
+
         if (!IsConnected())
         {
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9, "", ""))
+        _lastDataTable = FpTable10;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "", "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -739,7 +766,9 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, UserTable, "", ""))
+        _lastDataTable = UserTable;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "", "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -756,7 +785,9 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, AuthTable, "", ""))
+        _lastDataTable = AuthTable;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "", "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -773,7 +804,9 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, TimezoneTable, "", ""))
+        _lastDataTable = TimezoneTable;
+        _lastDataError = DeleteDeviceData(_handle, TimezoneTable, "", "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -790,7 +823,9 @@ public class AccessPanel
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, TransactionsTable, "", ""))
+        _lastDataTable = TransactionsTable;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "", "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -805,13 +840,17 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool DeleteFingerprint(string pin, int finger)
     {
+        if (DetectedFirmwareVersion == Version2014)
+            return true; // Skip, Not supported
+
         if (!IsConnected())
         {
             return false;
         }
 
-        if (0 <= DeleteDeviceData(_handle, DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9,
-                "Pin=" + pin + ",FingerID=" + finger, ""))
+        _lastDataTable = FpTable10;
+        _lastDataError = DeleteDeviceData(_handle, _lastDataTable, "Pin=" + pin + ",FingerID=" + finger, "");
+        if (0 <= _lastDataError)
         {
             return true;
         }
@@ -951,24 +990,27 @@ public class AccessPanel
             }
         }
 
-        Fingerprint[] fingerprints =
-            users.SelectMany(u => u.Fingerprints.Where(f => f.Template is { Length: > 100 })).ToArray();
-        for (int k = 0; k < fingerprints.Length; k += 20)
+        if (DetectedFirmwareVersion == Version2018)
         {
-            StringBuilder sb = new StringBuilder();
-            int end = Math.Min(k + 20, fingerprints.Length);
-            for (int i = k; i < end; i++)
+            Fingerprint[] fingerprints =
+                users.SelectMany(u => u.Fingerprints.Where(f => f.Template is { Length: > 100 })).ToArray();
+            for (int k = 0; k < fingerprints.Length; k += 20)
             {
-                sb.Append(fingerprints[i]).Append("\r\n");
-            }
+                StringBuilder sb = new StringBuilder();
+                int end = Math.Min(k + 20, fingerprints.Length);
+                for (int i = k; i < end; i++)
+                {
+                    sb.Append(fingerprints[i]).Append("\r\n");
+                }
 
-            byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
-            _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
-            _lastDataError = SetDeviceData(_handle, _lastDataTable, data, "");
-            if (_lastDataError != 0)
-            {
-                _failCount++;
-                return false;
+                byte[] data = Encoding.ASCII.GetBytes(sb.ToString());
+                _lastDataTable = FpTable10;
+                _lastDataError = SetDeviceData(_handle, _lastDataTable, data, "");
+                if (_lastDataError != 0)
+                {
+                    _failCount++;
+                    return false;
+                }
             }
         }
 
@@ -984,6 +1026,9 @@ public class AccessPanel
     [MethodImpl(MethodImplOptions.Synchronized)]
     public bool WriteFingerprints(Fingerprint[] fpList)
     {
+        if (DetectedFirmwareVersion == Version2014)
+            return true; // Skip, Not supported
+        
         // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  !IsConnected() = {!IsConnected()}");
         // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  fpList.Length = {fpList.Length}");
         if (!IsConnected() || fpList.Length == 0)
@@ -1010,7 +1055,7 @@ public class AccessPanel
         string dataString = sb.ToString();
         // Console.WriteLine($"         % pull sdk dbg % AddFingerprints()  dataString = {dataString}");
         byte[] data = Encoding.ASCII.GetBytes(dataString);
-        _lastDataTable = DetectedFirmwareVersion == Version2018 ? FpTable10 : FpTable9;
+        _lastDataTable = FpTable10;
         _lastDataError = SetDeviceData(_handle, _lastDataTable, data, "");
         if (_lastDataError == 0)
         {
