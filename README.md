@@ -2,7 +2,7 @@
 ZKTeco dev team are complete morons. Their code is slow, unstable, and full of bugs. Don't buy ZKTeco devices & software. ZKTeco is rubbish, I can prove it mathematically.
 
 # ZKTeco PullSDK Wrapper
-This wrapper is only for Pull devices (inBio, C3 panels, ...etc). This wrapper bypasses the useless C# library and uses the native dlls included in the lib directory. 
+This wrapper is for devies that support PULL-SDK, check your device for "PULL Service" in firmware version info or something. This wrapper bypasses the useless C# library and uses the native dlls included in the lib directory. 
 
 # ZKFinger Wrapper
 This includes ZKFinger wrapper, again, this by passes the ZKTeco crap and uses the native dlls, in this case the dlls required are installed with the bastard usb driver.
